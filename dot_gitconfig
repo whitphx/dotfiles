@@ -1,0 +1,46 @@
+[user]
+	name = Yuichiro Tachibana (Tsuchiya)
+	email = t.yic.yt@gmail.com
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+[core]
+	editor = vi
+	excludesfile = ~/.gitignore_global
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	si = switch  # sw is difficult to type
+	rs = restore
+	re = reset
+	rb = rebase
+	cm = commit
+	lg = log --graph --branches --pretty=format:'%C(yellow)%h%C(cyan)%d%Creset %s %C(green)- %an, %cr%Creset'
+	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+	showpr = !"f() { git log --merges --oneline --reverse --ancestry-path $1...master | grep 'Merge pull request #' | head -n 1; }; f"  # http://qiita.com/awakia/items/f14dc6310e469964a8f7
+	del-merged-branches = !"f() { git checkout $1; git branch --merged | egrep -v '^\\*|master|develop|release*' | xargs git branch -d; }; f"
+[init]
+	templatedir = ~/.git_template
+	defaultBranch = main
+[push]
+	default = simple
+	autoSetupRemote = true
+[credential]
+	helper = osxkeychain
+	helper = /usr/local/share/gcm-core/git-credential-manager
+    helper = store
+[ghq]
+	root = ~/go/src
+	root = ~/ghq
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[credential "https://huggingface.co"]
+	provider = generic
+[sendemail]
+	smtpServer = smtp.gmail.com
+    smtpServerPort = 587
+    smtpEncryption = tls
+	smtpUser = t.yic.yt@gmail.com
