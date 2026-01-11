@@ -38,12 +38,26 @@ send_macos_notification() {
 # --- tmux Notification ---
 send_tmux_notification() {
     if [[ -z "${TMUX:-}" ]]; then
+        # Not in tmux, just send macOS notification
+        send_macos_notification
         return 0
     fi
 
-    # Get current window index
+    # Get current window index (use -t to target the pane where this script runs)
     local current_window
-    current_window=$(tmux display-message -p '#I')
+    current_window=$(tmux display-message -t "$TMUX_PANE" -p '#I')
+
+    # Skip notification if user is already viewing this window
+    # We can't use #{window_active} directly as it's always 1 from within the pane
+    # Instead, check which window is actually active in the session
+    local active_window
+    active_window=$(tmux list-windows -F '#{window_index}:#{window_active}' | grep ':1$' | cut -d: -f1)
+    if [[ "$current_window" == "$active_window" ]]; then
+        return 0
+    fi
+
+    # Send macOS notification (only when user is not viewing this window)
+    send_macos_notification
 
     # Send bell to trigger visual/audio alert (works with monitor-bell)
     # The bell character triggers tmux's bell-action and monitor-bell
@@ -56,20 +70,22 @@ send_tmux_notification() {
     # Display a brief message in tmux status line
     tmux display-message "Claude Code is idle - waiting for input" 2>/dev/null || true
 
-    # Optional: Add a visual marker to window name (prefix with !)
-    # The user can clear this by running any command or we restore it
+    # Add a visual marker to window name (prefix with 🔔)
     local original_name
-    original_name=$(tmux display-message -p '#W')
+    original_name=$(tmux display-message -t "$TMUX_PANE" -p '#W')
 
     # Only add marker if not already present
     if [[ "${original_name}" != "🔔"* ]]; then
-        tmux rename-window "🔔${original_name}" 2>/dev/null || true
+        tmux rename-window -t "${current_window}" "🔔${original_name}" 2>/dev/null || true
+
+        # Set up a hook to remove the emoji when user focuses on this window
+        # The hook removes itself after firing once
+        tmux set-hook -w -t "${current_window}" pane-focus-in "run-shell 'name=\$(tmux display-message -p \"#W\"); case \"\$name\" in 🔔*) tmux rename-window \"\${name#🔔}\";; esac'; set-hook -uw pane-focus-in" 2>/dev/null || true
     fi
 }
 
 # --- Main ---
 main() {
-    send_macos_notification
     send_tmux_notification
 }
 
