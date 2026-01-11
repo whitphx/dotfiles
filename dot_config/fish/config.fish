@@ -10,6 +10,12 @@ if status is-interactive
 
     # Customize to your needs...
 
+    # If Fisher is not installed, install it
+    if not functions -q fisher
+        echo "Installing fisher..."
+        curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+    end
+
     ### ghq
     function gl
         # FZF_PREVIEW="ls -laTp {} | tail -n+4 | awk '{print \$9\"/\"\$6\"/\"\$7 \" \" \$10}'"
