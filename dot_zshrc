@@ -1,0 +1,46 @@
+# tmux
+## https://unix.stackexchange.com/a/113768
+if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+  # https://unix.stackexchange.com/questions/43601/how-can-i-set-my-default-shell-to-start-up-tmux#comment991939_113768
+  exec tmux new-session -A -s main
+fi
+
+# Starship
+eval "$(starship init zsh)"
+
+# Customize to your needs...
+### ghq
+gl () {
+  # FZF_PREVIEW="ls -laTp {} | tail -n+4 | awk '{print \$9\"/\"\$6\"/\"\$7 \" \" \$10}'"
+  FZF_PREVIEW="cat {}/README.*"  # TODO: Replace cat with bat
+  REPOPATH="$(ghq list --full-path | fzf --layout=reverse --preview ${FZF_PREVIEW})"
+  if [ -n "${REPOPATH}" ]; then
+    cd ${REPOPATH}
+  fi
+}
+
+### Rosetta
+alias intelzsh='arch -x86_64 zsh'
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+# pnpm
+export PNPM_HOME="/Users/whitphx/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+
+. "$HOME/.local/bin/env"
+
+# Added by Antigravity
+export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+
+source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
