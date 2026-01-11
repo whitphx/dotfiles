@@ -1,5 +1,4 @@
 {
-  "alwaysThinkingEnabled": true,
   "hooks": {
     "Notification": [
       {
@@ -10,7 +9,17 @@
             "command": "~/.local/bin/cc-idle-notification.sh"
           }
         ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/cc-idle-notification.sh"
+          }
+        ]
       }
     ]
-  }
+  },
+  "alwaysThinkingEnabled": true
 }
