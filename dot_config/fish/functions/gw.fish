@@ -5,7 +5,8 @@
 #
 # Features:
 # - fzf preview with branch info, changed files, and recent commits
-# - `gw`: select and switch to a worktree
+# - `gw`: switch worktree (falls back to add if none exist)
+# - `gw switch`: switch worktree only
 # - `gw add [branch]`: create worktree (with branch selector if no argument)
 # - `gw remove [target]`: remove worktree (with selector if no argument)
 # - Worktrees stored in .git/worktrees-gw/
@@ -83,16 +84,45 @@ function gw --description "Git worktree manager with fzf"
         end
         return
 
+    else if test "$cmd" = "switch"
+        # gw switch - Interactive worktree selection
+        __gw_switch_interactive "$worktrees_dir"
+        return
+
     else if test -n "$cmd"
         echo "Unknown command: $cmd"
         echo "Usage:"
-        echo "  gw              - Select worktree with fzf"
-        echo "  gw add <branch> - Create worktree for branch"
-        echo "  gw remove [branch|dir] - Remove worktree"
+        echo "  gw                      - Switch worktree (or add if none exist)"
+        echo "  gw switch               - Switch worktree"
+        echo "  gw add [branch]         - Create worktree for branch"
+        echo "  gw remove [branch|dir]  - Remove worktree"
         return 1
     end
 
-    # gw (no arguments) - Interactive worktree selection
+    # gw (no arguments) - Interactive worktree selection with fallback to add
+    if not __gw_has_worktrees
+        echo "No worktrees found. Select a branch to create one:"
+        __gw_select_branch_and_create "$worktrees_dir"
+    else
+        __gw_switch_interactive "$worktrees_dir"
+    end
+end
+
+function __gw_has_worktrees --description "Check if any worktrees exist (excluding main)"
+    set -l worktree_list (git worktree list --porcelain | string match -r '^worktree .*' | string replace 'worktree ' '')
+    set -l main_worktree (git rev-parse --show-toplevel)
+
+    for wt_path in $worktree_list
+        if test "$wt_path" != "$main_worktree"
+            return 0
+        end
+    end
+    return 1
+end
+
+function __gw_switch_interactive --description "Interactive worktree selection with fzf"
+    set -l worktrees_dir $argv[1]
+
     set -l worktree_list (git worktree list --porcelain | string match -r '^worktree .*' | string replace 'worktree ' '')
 
     # Skip the main worktree (first one) for selection
@@ -108,10 +138,8 @@ function gw --description "Git worktree manager with fzf"
     end
 
     if test (count $fzf_input) -eq 0
-        # No worktrees exist, go directly to branch selection
-        echo "No worktrees found. Select a branch to create one:"
-        __gw_select_branch_and_create "$worktrees_dir"
-        return
+        echo "No worktrees to switch to"
+        return 1
     end
 
     # Show worktree list with fzf
@@ -152,37 +180,16 @@ function gw --description "Git worktree manager with fzf"
     set -l selected (printf '%s\n' $fzf_input | fzf \
         --preview="$preview_script" \
         --preview-window="right:60%:wrap" \
-        --header="Git Worktrees | Enter: switch | No match + Enter: create new" \
+        --header="Git Worktrees | Enter: switch" \
         --border \
         --height=80% \
-        --layout=reverse \
-        --print-query \
-        --expect=enter)
+        --layout=reverse)
 
-    # Parse fzf output
-    # Line 1: query, Line 2: key pressed, Line 3: selected item
-    set -l query $selected[1]
-    set -l key $selected[2]
-    set -l selection $selected[3]
-
-    if test -n "$selection"
+    if test -n "$selected"
         # User selected an existing worktree
-        set -l target_path (echo $selection | awk '{print $1}')
+        set -l target_path (echo $selected | awk '{print $1}')
         cd "$target_path"
         echo "Switched to: $target_path"
-    else if test "$key" = "enter" -a -n "$query"
-        # No match, user pressed enter with a query - try to create worktree
-        # Check if query matches a branch name
-        if git show-ref --verify --quiet "refs/heads/$query" 2>/dev/null; or git show-ref --verify --quiet "refs/remotes/origin/$query" 2>/dev/null
-            __gw_create_worktree "$query" "$worktrees_dir"
-        else
-            # Show branch selector
-            echo "Branch '$query' not found. Select from available branches:"
-            __gw_select_branch_and_create "$worktrees_dir" "$query"
-        end
-    else if test "$key" = "enter"
-        # Enter pressed with empty query and no selection - show branch list
-        __gw_select_branch_and_create "$worktrees_dir"
     end
 end
 
