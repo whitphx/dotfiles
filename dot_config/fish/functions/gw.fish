@@ -128,6 +128,9 @@ function __gw_switch_interactive --description "Interactive worktree selection w
     # Skip the main worktree (first one) for selection
     set -l main_worktree (git rev-parse --show-toplevel)
 
+    # Special item for adding new worktree
+    set -l add_worktree_marker "+ Add new worktree..."
+
     # Build list for fzf: "path [branch]"
     set -l fzf_input
     for wt_path in $worktree_list
@@ -144,6 +147,15 @@ function __gw_switch_interactive --description "Interactive worktree selection w
 
     # Show worktree list with fzf
     set -l preview_script 'sh -c '\''
+        item="$1"
+        if echo "$item" | grep -q "^+ Add new worktree"; then
+            echo "┌──────────────────────────────────────────────────┐"
+            echo "│ ✨ Add NEW worktree"
+            echo "└──────────────────────────────────────────────────┘"
+            echo ""
+            echo "Select this option to choose a branch and create a new worktree."
+            exit 0
+        fi
         worktree_path=$(echo "$1" | awk "{print \$1}")
         branch=$(echo "$1" | sed "s/.*\\[//" | sed "s/\\]//")
 
@@ -177,7 +189,8 @@ function __gw_switch_interactive --description "Interactive worktree selection w
         git -C "$worktree_path" log --oneline --color=always -10 2>/dev/null | sed "s/^/  /"
     '\'' _ {}'
 
-    set -l selected (printf '%s\n' $fzf_input | fzf \
+    # Put the add worktree marker at the top
+    set -l selected (printf '%s\n' $add_worktree_marker $fzf_input | fzf \
         --preview="$preview_script" \
         --preview-window="right:60%:wrap" \
         --header="Git Worktrees | Enter: switch" \
@@ -186,10 +199,15 @@ function __gw_switch_interactive --description "Interactive worktree selection w
         --layout=reverse)
 
     if test -n "$selected"
-        # User selected an existing worktree
-        set -l target_path (echo $selected | awk '{print $1}')
-        cd "$target_path"
-        echo "Switched to: $target_path"
+        if test "$selected" = "$add_worktree_marker"
+            # User selected the "add new worktree" option
+            __gw_select_branch_and_create "$worktrees_dir"
+        else
+            # User selected an existing worktree
+            set -l target_path (echo $selected | awk '{print $1}')
+            cd "$target_path"
+            echo "Switched to: $target_path"
+        end
     end
 end
 
