@@ -63,7 +63,21 @@ function gw --description "Git worktree manager with fzf"
             return 1
         end
 
-        # Confirm removal
+        # Check for uncommitted changes
+        set -l changes (git -C "$worktree_path" status --porcelain 2>/dev/null)
+        if test -n "$changes"
+            echo "Warning: Worktree has uncommitted changes:"
+            echo "$changes" | head -10
+            if test (count (string split \n "$changes")) -gt 10
+                echo "  ... and more"
+            end
+            read -P "Are you sure you want to remove this worktree? [y/N] " -l confirm
+            if test "$confirm" != "y" -a "$confirm" != "Y"
+                echo "Cancelled"
+                return
+            end
+        end
+
         echo "Removing worktree at: $worktree_path"
         git worktree remove --force "$worktree_path"
 
@@ -404,6 +418,22 @@ function __gw_remove_interactive --description "Show fzf to select worktree to r
 
     if test -n "$selected"
         set -l worktree_path (echo $selected | cut -f1)
+
+        # Check for uncommitted changes
+        set -l changes (git -C "$worktree_path" status --porcelain 2>/dev/null)
+        if test -n "$changes"
+            echo "Warning: Worktree has uncommitted changes:"
+            echo "$changes" | head -10
+            if test (count (string split \n "$changes")) -gt 10
+                echo "  ... and more"
+            end
+            read -P "Are you sure you want to remove this worktree? [y/N] " -l confirm
+            if test "$confirm" != "y" -a "$confirm" != "Y"
+                echo "Cancelled"
+                return
+            end
+        end
+
         echo "Removing worktree at: $worktree_path"
         git worktree remove --force "$worktree_path"
 
