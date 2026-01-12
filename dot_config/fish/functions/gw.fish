@@ -63,6 +63,9 @@ function gw --description "Git worktree manager with fzf"
             return 1
         end
 
+        # Get branch name before removing (needed for optional branch deletion)
+        set -l branch (git -C "$worktree_path" rev-parse --abbrev-ref HEAD 2>/dev/null)
+
         # Check for uncommitted changes
         set -l changes (git -C "$worktree_path" status --porcelain 2>/dev/null)
         if test -n "$changes"
@@ -83,6 +86,19 @@ function gw --description "Git worktree manager with fzf"
 
         if test $status -eq 0
             echo "Worktree removed successfully"
+
+            # Ask if the branch should also be deleted
+            if test -n "$branch" -a "$branch" != "HEAD"
+                read -P "Also delete branch '$branch'? [y/N] " -l delete_branch
+                if test "$delete_branch" = "y" -o "$delete_branch" = "Y"
+                    git branch -D "$branch" 2>/dev/null
+                    if test $status -eq 0
+                        echo "Branch '$branch' deleted"
+                    else
+                        echo "Failed to delete branch '$branch'"
+                    end
+                end
+            end
         end
         return
 
@@ -419,6 +435,9 @@ function __gw_remove_interactive --description "Show fzf to select worktree to r
     if test -n "$selected"
         set -l worktree_path (echo $selected | cut -f1)
 
+        # Get branch name before removing (needed for optional branch deletion)
+        set -l branch (git -C "$worktree_path" rev-parse --abbrev-ref HEAD 2>/dev/null)
+
         # Check for uncommitted changes
         set -l changes (git -C "$worktree_path" status --porcelain 2>/dev/null)
         if test -n "$changes"
@@ -439,6 +458,19 @@ function __gw_remove_interactive --description "Show fzf to select worktree to r
 
         if test $status -eq 0
             echo "Worktree removed successfully"
+
+            # Ask if the branch should also be deleted
+            if test -n "$branch" -a "$branch" != "HEAD"
+                read -P "Also delete branch '$branch'? [y/N] " -l delete_branch
+                if test "$delete_branch" = "y" -o "$delete_branch" = "Y"
+                    git branch -D "$branch" 2>/dev/null
+                    if test $status -eq 0
+                        echo "Branch '$branch' deleted"
+                    else
+                        echo "Failed to delete branch '$branch'"
+                    end
+                end
+            end
         end
     end
 end
