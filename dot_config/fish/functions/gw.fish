@@ -110,14 +110,8 @@ end
 
 function __gw_has_worktrees --description "Check if any worktrees exist (excluding main)"
     set -l worktree_list (git worktree list --porcelain | string match -r '^worktree .*' | string replace 'worktree ' '')
-    set -l main_worktree (git rev-parse --show-toplevel)
-
-    for wt_path in $worktree_list
-        if test "$wt_path" != "$main_worktree"
-            return 0
-        end
-    end
-    return 1
+    # Main worktree is always first, so if there are more than 1, we have other worktrees
+    test (count $worktree_list) -gt 1
 end
 
 function __gw_switch_interactive --description "Interactive worktree selection with fzf"
@@ -125,19 +119,31 @@ function __gw_switch_interactive --description "Interactive worktree selection w
 
     set -l worktree_list (git worktree list --porcelain | string match -r '^worktree .*' | string replace 'worktree ' '')
 
-    # Skip the main worktree (first one) for selection
-    set -l main_worktree (git rev-parse --show-toplevel)
+    # The main worktree is always the first one in the list
+    set -l main_worktree $worktree_list[1]
+    set -l current_worktree (pwd -P)
 
-    # Special item for adding new worktree
-    set -l add_worktree_marker "+ Add new worktree..."
+    # Special item for adding new worktree (needs tab for --with-nth=2)
+    set -l add_worktree_marker (printf '\t%s' "+ Add new worktree...")
 
-    # Build list for fzf: "path [branch]"
+    # Build list for fzf: "full_path<TAB>relative_path [branch]"
+    # Use TAB delimiter so fzf can display relative path while keeping full path
     set -l fzf_input
     for wt_path in $worktree_list
-        if test "$wt_path" != "$main_worktree"
-            set -l branch (git -C "$wt_path" rev-parse --abbrev-ref HEAD 2>/dev/null)
-            set -a fzf_input "$wt_path [$branch]"
+        set -l branch (git -C "$wt_path" rev-parse --abbrev-ref HEAD 2>/dev/null)
+        # Show path relative to main worktree directory (main worktree shows as ".")
+        set -l relative_path
+        if test "$wt_path" = "$main_worktree"
+            set relative_path "."
+        else
+            set relative_path (string replace "$main_worktree/" "" "$wt_path")
         end
+        # Add marker for current worktree
+        set -l current_marker "  "
+        if test "$wt_path" = "$current_worktree"
+            set current_marker "* "
+        end
+        set -a fzf_input (printf '%s\t%s%s [%s]' "$wt_path" "$current_marker" "$relative_path" "$branch")
     end
 
     if test (count $fzf_input) -eq 0
@@ -148,7 +154,7 @@ function __gw_switch_interactive --description "Interactive worktree selection w
     # Show worktree list with fzf
     set -l preview_script 'sh -c '\''
         item="$1"
-        if echo "$item" | grep -q "^+ Add new worktree"; then
+        if echo "$item" | grep -q "+ Add new worktree"; then
             echo "┌──────────────────────────────────────────────────┐"
             echo "│ ✨ Add NEW worktree"
             echo "└──────────────────────────────────────────────────┘"
@@ -156,7 +162,8 @@ function __gw_switch_interactive --description "Interactive worktree selection w
             echo "Select this option to choose a branch and create a new worktree."
             exit 0
         fi
-        worktree_path=$(echo "$1" | awk "{print \$1}")
+        # Format: full_path<TAB>short_name [branch]
+        worktree_path=$(echo "$1" | cut -f1)
         branch=$(echo "$1" | sed "s/.*\\[//" | sed "s/\\]//")
 
         echo "┌──────────────────────────────────────────────────┐"
@@ -196,15 +203,17 @@ function __gw_switch_interactive --description "Interactive worktree selection w
         --header="Git Worktrees | Enter: switch" \
         --border \
         --height=80% \
-        --layout=reverse)
+        --layout=reverse \
+        --delimiter=(printf '\t') \
+        --with-nth=2)
 
     if test -n "$selected"
         if test "$selected" = "$add_worktree_marker"
             # User selected the "add new worktree" option
             __gw_select_branch_and_create "$worktrees_dir"
         else
-            # User selected an existing worktree
-            set -l target_path (echo $selected | awk '{print $1}')
+            # User selected an existing worktree - extract full path from first field
+            set -l target_path (echo $selected | cut -f1)
             cd "$target_path"
             echo "Switched to: $target_path"
         end
@@ -326,15 +335,20 @@ end
 function __gw_remove_interactive --description "Show fzf to select worktree to remove"
     set -l worktrees_dir $argv[1]
 
-    # Get worktree list excluding main
+    # Get worktree list - main worktree is always first
     set -l worktree_list (git worktree list --porcelain | string match -r '^worktree .*' | string replace 'worktree ' '')
-    set -l main_worktree (git rev-parse --show-toplevel)
+    set -l main_worktree $worktree_list[1]
+    set -l current_worktree (pwd -P)
 
+    # Build list for fzf: "full_path<TAB>relative_path [branch]"
+    # Exclude main worktree and current worktree from removal list
     set -l fzf_input
     for wt_path in $worktree_list
-        if test "$wt_path" != "$main_worktree"
+        if test "$wt_path" != "$main_worktree" -a "$wt_path" != "$current_worktree"
             set -l branch (git -C "$wt_path" rev-parse --abbrev-ref HEAD 2>/dev/null)
-            set -a fzf_input "$wt_path [$branch]"
+            # Show path relative to main worktree directory
+            set -l relative_path (string replace "$main_worktree/" "" "$wt_path")
+            set -a fzf_input (printf '%s\t%s [%s]' "$wt_path" "$relative_path" "$branch")
         end
     end
 
@@ -344,7 +358,8 @@ function __gw_remove_interactive --description "Show fzf to select worktree to r
     end
 
     set -l preview_script 'sh -c '\''
-        worktree_path=$(echo "$1" | awk "{print \$1}")
+        # Format: full_path<TAB>short_name [branch]
+        worktree_path=$(echo "$1" | cut -f1)
         branch=$(echo "$1" | sed "s/.*\\[//" | sed "s/\\]//")
 
         echo "┌──────────────────────────────────────────────────┐"
@@ -383,10 +398,12 @@ function __gw_remove_interactive --description "Show fzf to select worktree to r
         --header="Select worktree to REMOVE (Enter to confirm)" \
         --border \
         --height=80% \
-        --layout=reverse)
+        --layout=reverse \
+        --delimiter=(printf '\t') \
+        --with-nth=2)
 
     if test -n "$selected"
-        set -l worktree_path (echo $selected | awk '{print $1}')
+        set -l worktree_path (echo $selected | cut -f1)
         echo "Removing worktree at: $worktree_path"
         git worktree remove --force "$worktree_path"
 
