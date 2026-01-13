@@ -290,6 +290,29 @@ function __gw_create_worktree --description "Create a worktree for a branch"
 
     if test $status -eq 0
         echo "Created worktree at: $worktree_path"
+
+        # Files/patterns to copy to new worktrees (relative to main worktree)
+        set -l copy_patterns \
+            ".env" \
+            ".claude/*.local.*"
+
+        # Copy matching files from main worktree to new worktree
+        set -l main_worktree (git worktree list --porcelain | string match -r '^worktree .*' | head -1 | string replace 'worktree ' '')
+
+        for pattern in $copy_patterns
+            # Use eval to expand glob patterns stored in variables
+            set -l files (eval "printf '%s\n' $main_worktree/$pattern" 2>/dev/null)
+            for file in $files
+                if test -f "$file"
+                    set -l relative_path (string replace "$main_worktree/" "" "$file")
+                    set -l target_dir (dirname "$worktree_path/$relative_path")
+                    mkdir -p "$target_dir"
+                    cp "$file" "$worktree_path/$relative_path"
+                    echo "Copied $relative_path"
+                end
+            end
+        end
+
         cd "$worktree_path"
     else
         echo "Failed to create worktree"
