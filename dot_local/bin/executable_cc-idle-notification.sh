@@ -74,14 +74,15 @@ send_tmux_notification() {
     local original_name
     original_name=$(tmux display-message -t "$TMUX_PANE" -p '#W')
 
-    # Only add marker if not already present
-    if [[ "${original_name}" != "🔔"* ]]; then
-        tmux rename-window -t "${current_window}" "🔔${original_name}" 2>/dev/null || true
+    # Remove stale emoji and hook if present (cleanup from previous failed attempts)
+    original_name="${original_name#🔔}"
+    tmux set-hook -uw -t "${current_window}" pane-focus-in 2>/dev/null || true
 
-        # Set up a hook to remove the emoji when user focuses on this window
-        # The hook removes itself after firing once
-        tmux set-hook -w -t "${current_window}" pane-focus-in "run-shell 'name=\$(tmux display-message -p \"#W\"); case \"\$name\" in 🔔*) tmux rename-window \"\${name#🔔}\";; esac'; set-hook -uw pane-focus-in" 2>/dev/null || true
-    fi
+    tmux rename-window -t "${current_window}" "🔔${original_name}" 2>/dev/null || true
+
+    # Set up a hook to remove the emoji when user focuses on this window
+    # The hook removes itself after firing once
+    tmux set-hook -w -t "${current_window}" pane-focus-in "run-shell 'name=\$(tmux display-message -p \"#W\"); case \"\$name\" in 🔔*) tmux rename-window \"\${name#🔔}\";; esac'; set-hook -uw pane-focus-in" 2>/dev/null || true
 }
 
 # --- Main ---
