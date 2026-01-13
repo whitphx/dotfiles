@@ -1,2 +1,5 @@
 *~
 .DS_Store
+
+# https://code.claude.com/docs/en/settings#available-scopes
+.claude/*.local.*
