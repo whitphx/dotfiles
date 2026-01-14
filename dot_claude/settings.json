@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.local/bin/cc-idle-notification.sh"
+            "command": "~/.local/bin/ai-cli-notification.sh --tool=claude-code"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.local/bin/cc-idle-notification.sh"
+            "command": "~/.local/bin/ai-cli-notification.sh --tool=claude-code"
           }
         ]
       }

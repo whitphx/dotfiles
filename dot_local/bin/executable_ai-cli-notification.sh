@@ -1,12 +1,77 @@
 #!/bin/bash -eu
 
-# Codex CLI idle notification script
-# This script sends a notification when Codex CLI is waiting for input.
+# Unified AI CLI notification script
+# Supports Claude Code, Codex CLI, and other AI coding tools.
+#
+# Usage:
+#   ai-cli-notification.sh --tool=claude-code < json_input
+#   ai-cli-notification.sh --tool=codex "json_input"
 
-# Parse the last assistant message from JSON input
-LAST_MESSAGE=$(echo "$1" | jq -r '.["last-assistant-message"] // "Codex task completed"')
+# --- Parse arguments ---
+TOOL=""
+JSON_ARG=""
 
-# Gather context information
+for arg in "$@"; do
+    case "$arg" in
+        --tool=*)
+            TOOL="${arg#--tool=}"
+            ;;
+        *)
+            JSON_ARG="$arg"
+            ;;
+    esac
+done
+
+if [[ -z "$TOOL" ]]; then
+    echo "Usage: $0 --tool=<claude-code|codex> [json_data]" >&2
+    exit 1
+fi
+
+# --- Read JSON input ---
+# Claude Code passes JSON via stdin, Codex passes via argument
+INPUT_JSON=""
+case "$TOOL" in
+    claude-code)
+        INPUT_JSON=$(cat)
+        ;;
+    codex)
+        INPUT_JSON="$JSON_ARG"
+        ;;
+    *)
+        echo "Unknown tool: $TOOL" >&2
+        exit 1
+        ;;
+esac
+
+# --- Parse notification data based on tool ---
+NOTIFICATION_TITLE=""
+NOTIFICATION_MESSAGE=""
+
+case "$TOOL" in
+    claude-code)
+        NOTIFICATION_MESSAGE=$(echo "$INPUT_JSON" | jq -r '.message // "Session is waiting for input"')
+        NOTIFICATION_TYPE=$(echo "$INPUT_JSON" | jq -r '.notification_type // "unknown"')
+
+        # Map notification type to a human-readable title
+        case "$NOTIFICATION_TYPE" in
+            permission_prompt)
+                NOTIFICATION_TITLE="Claude Code - Permission Required"
+                ;;
+            task_completed)
+                NOTIFICATION_TITLE="Claude Code - Task Completed"
+                ;;
+            *)
+                NOTIFICATION_TITLE="Claude Code"
+                ;;
+        esac
+        ;;
+    codex)
+        NOTIFICATION_MESSAGE=$(echo "$INPUT_JSON" | jq -r '.["last-assistant-message"] // "Codex task completed"')
+        NOTIFICATION_TITLE="Codex CLI"
+        ;;
+esac
+
+# --- Gather context information ---
 CWD="${PWD}"
 DIR_NAME="${PWD##*/}"
 TMUX_SESSION=""
@@ -23,8 +88,8 @@ send_macos_notification() {
         return 0
     fi
 
-    local title="Codex CLI Idle"
-    local message="$LAST_MESSAGE"
+    local title="$NOTIFICATION_TITLE"
+    local message="$NOTIFICATION_MESSAGE"
     local subtitle=""
 
     # Build context subtitle
@@ -33,6 +98,10 @@ send_macos_notification() {
     else
         subtitle="${CWD}"
     fi
+
+    # Escape double quotes in message for osascript
+    message="${message//\"/\\\"}"
+    subtitle="${subtitle//\"/\\\"}"
 
     # Use osascript to send notification (built-in, no dependencies)
     osascript -e "display notification \"${message}\" with title \"${title}\" subtitle \"${subtitle}\" sound name \"Glass\""
@@ -71,7 +140,7 @@ send_tmux_notification() {
     tmux set-window-option -t "${current_window}" monitor-bell on 2>/dev/null || true
 
     # Display a brief message in tmux status line
-    tmux display-message "Codex CLI: ${LAST_MESSAGE}" 2>/dev/null || true
+    tmux display-message "${NOTIFICATION_TITLE}: ${NOTIFICATION_MESSAGE}" 2>/dev/null || true
 
     # Add a visual marker to window name (prefix with 🔔)
     local original_name
@@ -93,4 +162,4 @@ main() {
     send_tmux_notification
 }
 
-main "$@"
+main
