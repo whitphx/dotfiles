@@ -313,6 +313,12 @@ function __gw_create_worktree --description "Create a worktree for a branch"
             end
         end
 
+        # Initialize submodules if present
+        if test -f "$worktree_path/.gitmodules"
+            echo "Initializing submodules..."
+            git -C "$worktree_path" submodule update --init --recursive
+        end
+
         cd "$worktree_path"
     else
         echo "Failed to create worktree"
