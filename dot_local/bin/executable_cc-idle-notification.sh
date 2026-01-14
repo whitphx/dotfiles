@@ -1,7 +1,28 @@
 #!/bin/bash -eu
 
-# Claude Code idle notification script
-# This script sends a notification when Claude Code has been idle for 60 seconds.
+# Claude Code notification script
+# This script sends a notification when Claude Code triggers a notification hook.
+# Event data is passed via stdin as JSON.
+
+# Read JSON from stdin
+INPUT_JSON=$(cat)
+
+# Parse notification data
+NOTIFICATION_MESSAGE=$(echo "$INPUT_JSON" | jq -r '.message // "Session is waiting for input"')
+NOTIFICATION_TYPE=$(echo "$INPUT_JSON" | jq -r '.notification_type // "unknown"')
+
+# Map notification type to a human-readable title
+case "$NOTIFICATION_TYPE" in
+    permission_prompt)
+        NOTIFICATION_TITLE="Claude Code - Permission Required"
+        ;;
+    task_completed)
+        NOTIFICATION_TITLE="Claude Code - Task Completed"
+        ;;
+    *)
+        NOTIFICATION_TITLE="Claude Code"
+        ;;
+esac
 
 # Gather context information
 CWD="${PWD}"
@@ -20,8 +41,8 @@ send_macos_notification() {
         return 0
     fi
 
-    local title="Claude Code Idle"
-    local message="Session is waiting for input"
+    local title="$NOTIFICATION_TITLE"
+    local message="$NOTIFICATION_MESSAGE"
     local subtitle=""
 
     # Build context subtitle
@@ -30,6 +51,10 @@ send_macos_notification() {
     else
         subtitle="${CWD}"
     fi
+
+    # Escape double quotes in message for osascript
+    message="${message//\"/\\\"}"
+    subtitle="${subtitle//\"/\\\"}"
 
     # Use osascript to send notification (built-in, no dependencies)
     osascript -e "display notification \"${message}\" with title \"${title}\" subtitle \"${subtitle}\" sound name \"Glass\""
@@ -68,7 +93,7 @@ send_tmux_notification() {
     tmux set-window-option -t "${current_window}" monitor-bell on 2>/dev/null || true
 
     # Display a brief message in tmux status line
-    tmux display-message "Claude Code is idle - waiting for input" 2>/dev/null || true
+    tmux display-message "${NOTIFICATION_TITLE}: ${NOTIFICATION_MESSAGE}" 2>/dev/null || true
 
     # Add a visual marker to window name (prefix with 🔔)
     local original_name
