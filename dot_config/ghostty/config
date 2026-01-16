@@ -1,0 +1,6 @@
+font-size = 14
+font-feature = -calt, -liga, -dlig
+
+theme = Paul Millr
+
+keybind = shift+enter=text:\x1b\r
