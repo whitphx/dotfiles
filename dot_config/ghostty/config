@@ -2,5 +2,9 @@ font-size = 14
 font-feature = -calt, -liga, -dlig
 
 theme = Paul Millr
+unfocused-split-opacity = 1
+minimum-contrast = 1.1
+bold-color = bright
+faint-opacity = 1
 
 keybind = shift+enter=text:\x1b\r
