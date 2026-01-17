@@ -301,22 +301,26 @@ function __gw_create_worktree --description "Create a worktree for a branch"
 
         for pattern in $copy_patterns
             # Use eval to expand glob patterns stored in variables
-            set -l files (eval "printf '%s\n' $main_worktree/$pattern" 2>/dev/null)
+            set -l files
+            eval "set files $main_worktree/$pattern" 2>/dev/null
             for file in $files
-                if test -f "$file"
-                    set -l relative_path (string replace "$main_worktree/" "" "$file")
-                    set -l target_dir (dirname "$worktree_path/$relative_path")
-                    mkdir -p "$target_dir"
-                    cp "$file" "$worktree_path/$relative_path"
-                    echo "Copied $relative_path"
-                end
+                # Skip if file doesn't exist (glob didn't match or literal path not found)
+                test -f "$file"; or continue
+                set -l relative_path (string replace "$main_worktree/" "" "$file")
+                set -l target_dir (dirname "$worktree_path/$relative_path")
+                mkdir -p "$target_dir"
+                cp "$file" "$worktree_path/$relative_path"
+                echo "Copied $relative_path"
             end
         end
 
         # Initialize submodules if present
         if test -f "$worktree_path/.gitmodules"
-            echo "Initializing submodules..."
-            git -C "$worktree_path" submodule update --init --recursive
+            read -P "Initialize submodules? [Y/n] " -l init_submodules
+            if test "$init_submodules" != "n" -a "$init_submodules" != "N"
+                echo "Initializing submodules..."
+                git -C "$worktree_path" submodule update --init --recursive
+            end
         end
 
         cd "$worktree_path"
