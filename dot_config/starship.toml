@@ -1,0 +1,8 @@
+# Add a custom module for date and time
+[custom.datetime]
+# Command to get the date and time string
+command = 'date +"%Y-%m-%d %H:%M:%S"'
+# Run the command every time the prompt is rendered
+when = "true"
+# Format the output with a specific style
+format = "[$output](bold yellow) "

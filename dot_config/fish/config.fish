@@ -30,6 +30,14 @@ if status is-interactive
     alias intelzsh='arch -x86_64 zsh'
 end
 
+# Starship transient prompt configuration
+# We use this to show the time in the right prompt.
+# https://starship.rs/ja-JP/advanced-config/#fish-%E3%81%AE-transientprompt-%E3%81%A8-transientrightprompt
+function starship_transient_rprompt_func
+    starship module time
+end
+enable_transience
+
 # pnpm
 set -gx PNPM_HOME "/Users/whitphx/Library/pnpm"
 if not string match -q -- $PNPM_HOME $PATH
