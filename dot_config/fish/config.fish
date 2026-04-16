@@ -58,4 +58,5 @@ set --export PATH "$HOME/.antigravity/antigravity/bin" $PATH
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/whitphx/src/google-cloud-sdk/path.fish.inc' ]; . '/Users/whitphx/src/google-cloud-sdk/path.fish.inc'; end
 
+# Aikido Safe Chain
 source ~/.safe-chain/scripts/init-fish.fish # Safe-chain Fish initialization script
