@@ -12,6 +12,16 @@ When I make code changes that form a coherent, meaningful batch ready for versio
 
 Note: Permission to amend or push applies only to the particular commit the user mentions in their instruction. This permission does not carry over to subsequent commits—each commit requires its own explicit instruction.
 
+## Pull request workflow
+
+When the user has asked for changes to land in a PR — whether by creating one or pushing to a branch with one — CI is part of "done." Treat the work as incomplete until checks are green; this is an extension of the push instruction under "Git commit policy," not a separate authorization.
+
+- After a push to a PR branch, run `gh pr checks <number> --watch` and block on it in this turn. "I'll check later" / "you can verify with `gh ...`" is not acceptable — wait for the result before yielding.
+- On failure, read `gh run view <run-id> --log-failed` (not `--log` — the full log eats context for no gain). Read the actual error before reacting; do not pattern-match to a familiar-looking failure or guess from the job name.
+- Fix → push → re-watch. Loop until every check is `SUCCESS`. Local lint / typecheck / tests passing is not a substitute — CI runs jobs (matrix builds, integration suites, deploy previews) that can fail when local doesn't.
+- If the same check fails three times across your fixes, stop and summarize what you tried. Three same-shape failures usually means the mental model is wrong, and continuing burns turns without converging.
+- If a failure is plausibly unrelated to the change (flaky test, infra outage, unrelated job timing out), say so explicitly and ask how to proceed — do not silently retry or rerun jobs to make red go away.
+
 ## Web frontend development
 
 When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibility (a11y):
@@ -23,8 +33,14 @@ When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibi
 - Ensure form inputs have associated labels
 
 ## Coding style
-- Prefer direct library APIs and local explicit code over thin abstraction layers. Introduce helper utilities only when they encode real policy or repeated complexity.
-- Before hand-rolling non-trivial functionality, also consider platform/built-in APIs and well-known third-party libraries as equal candidates — none is the default. Weigh the tradeoffs for the specific case (e.g. self-implementation tends to give a smaller bundle and less dependency risk, while built-ins/third-parties tend to be more stable, spec-correct, and battle-tested), recommend an approach with the reasoning, and ask the user if the call isn't clear-cut.
+- **Default to libraries / built-ins for non-trivial logic.** "Non-trivial" means: anything beyond a few-line transformation, anything with edge cases that an upstream-tested implementation would already handle (CSRF Origin checks, retry pools, ID generation, URL parsing, OAuth flows, cookie attribute handling, etc.). Before writing a middleware / fetcher / parser / pool from scratch, look for an existing implementation — including framework built-ins (e.g. `hono/csrf`, `hono/cookie`), well-known npm packages (e.g. `nanoid`, `p-limit`, `valibot`), and platform APIs (`URL`, `crypto.subtle`, `AbortSignal.timeout`). Self-implementation is a valid choice but **needs justification**: e.g. the dep is heavy relative to the work, the upstream behavior doesn't fit our exact need, real bundle/perf concerns, etc. State the reasoning if picking self-implementation.
+- **Prefer direct library APIs and local explicit code over thin abstraction layers.** Introduce helper utilities only when they encode real policy or repeated complexity. Concrete anti-patterns:
+  - One-line wrappers around a library call: `function registerCsrfGuard(app) { app.use("*", csrf({...})) }` adds no signal beyond `app.use("*", csrf({...}))` at the call site.
+  - Single-call-site "helpers" that just rename the operation.
+  - Single-thing re-export modules that exist only to add a layer of indirection.
+  The bar for extraction: does the name encode a *concept* the reader couldn't read off the call site? `generateDocumentSlug()` passes (the call site's intent is "make a slug"; the name lets the implementation evolve independently). `registerCsrfGuard()` doesn't (the call site already says "register the csrf guard" by configuring the middleware).
+- **Re-evaluate extractions after each round of edits.** A helper that pulled its weight when the call site was complex may stop pulling it after the call site simplifies. Inline it. The codebase's shape should track its current state, not its history.
+- **When you move / rename code, move its co-located test file too.** Tests live next to (and are named after) their subject, not their first home. After extracting `fetchMe` from `AuthContext.tsx` to `me-fetcher.ts`, `AuthContext.test.ts` should become `me-fetcher.test.ts`.
 
 ## Project scaffolding
 
@@ -49,6 +65,7 @@ Do not write comments that:
   - Count / cardinality claims: "the only helper shared", "used in two sites below", "all three providers", "the four fields above". The number drifts the moment a fifth one is added.
   - Path / endpoint enumerations that mirror routes, exports, or imports: "(`POST /foo`, `GET /bar`)" listing routes that live in another file, "(DocumentSyncRoom, fetch, scheduled)" listing a file's exports.
   - Identifier name lists that mirror a schema, picklist, or registry: "providers (github, google)", "the routes (me, logout, identities)".
+  - Prose enumeration of branch conditions that mirror the `if` / `switch` / SQL `WHERE` clause right below: "Reject when soft-deleting or when workspace_id mismatches" sitting above `if (existing.deleting_at !== null || existing.workspace_id !== workspaceId)`. The branch already enumerates them; the prose just paraphrases the boolean expression. Keep only the *why* (why these conditions collapse to the same response code, why this asymmetry exists, etc.), not the enumeration.
   Keep the *why* (sizing rationale, allowlist intent, design constraint), and let the reader read the value / count / list off the code.
 - **Justify a naming or extraction choice.** "Named because the call site reads better" / "Extracted because it's reused twice" — the name and the call sites are visible. If the *why* of the name encodes a real concept, the comment can capture that concept; otherwise drop it.
 - **Describe usage that grep can answer.** "Used in two sites below" / "Imported by routes/foo.ts" / "Used by routes/X (7 handlers)" — let the reader find usages with their tools.
@@ -57,10 +74,50 @@ Do not write comments that:
 - **Repeat cross-file context that already lives at one canonical site.** State the explanation in one place (typically next to the definition / decision) and let other sites point at it briefly.
 - **Dress up a convention as a systematic feature.** "To add an endpoint: add the handler to `routes/<url>.ts`, then chain `.route("/", ...)` below" reads like a step-by-step the codebase enforces, when it's just a layout convention nothing actually checks. State the convention if it needs stating; skip the prescriptive instructions the code can't make true.
 - **Write decorative section dividers.** `// --- Schemas ---`, `// --- Routes ---` between groups of declarations add no information; the declarations themselves are already visible. If a file is long enough that a reader can't navigate it, that's a signal to split the file, not to add headings.
-- **Lead with a descriptive what-is preamble.** "Type-only export surface for the app's `hc<AppType>()` client" sitting above `export type { AppType } from "./worker"` is a paraphrase of the file name plus the one line of code below it. Drop the preamble; keep only the *why* (e.g. why this re-export module exists separately from `worker.ts`).
+- **Lead with a descriptive what-is preamble.** A paraphrase of whatever the reader is about to see — file, function, route handler, or block — adds nothing. The pattern shows up at every scope:
+  - File scope: "Type-only export surface for the app's `hc<AppType>()` client" sitting above `export type { AppType } from "./worker"` paraphrases the file name plus the one line below.
+  - Route handler scope: "Soft-delete a document." / "Push a snapshot into the Durable Object room." / "List active documents in a workspace, in sort order." sitting above `.delete("/api/documents/:id", ...)` / `.put("/api/documents/:id/snapshot", ...)` / `.get("/api/documents", ...)` with `ORDER BY sort_order`. The HTTP verb plus the route URL plus the response shape already says it.
+  - Block scope: "Update path.", "Insert path.", "Branch on existence with a SELECT first.", "Finalize the document: bump updated_at and clear initializing_at." used as English mini-headings inside a function. These are decorative section dividers in prose form — same problem as `// --- Update ---`, just without the dashes.
+  Drop the preamble. Keep only the *why* (a non-obvious response-shape choice, a deliberate cross-handler asymmetry, a race-window the code below addresses, etc.).
 - **Quote specific facts you can't cite.** "The package emits printable-ASCII strings (typically <20 chars)" — where did the "<20 chars" come from? If you can't point at a doc / README / spec / measurement, drop the number; an unsupported specific looks authoritative and rots silently when the underlying behavior changes. When the fact *is* genuinely useful, leave a citation (link to the package README, a spec section, an issue) so a future reader can verify or update it.
 
 Per-site WHY notes near a tricky branch, a non-obvious cast, a race-condition guard, or a deliberate asymmetry are valuable — keep those.
+
+## Attribution and licensing
+
+When you write code that's structurally derived from an external project — whether the source was named explicitly ("mirror tldraw's pattern", "adapt React Router's loader API") or surfaced during research (a blog post, a reference repo, an upstream example) — treat attribution as part of the work, not an afterthought. The bar is "would a reader of this file know where this idea came from, and would they be able to comply with its license?" If no, add the attribution.
+
+- **Look up the upstream license before assuming MIT.** GitHub's `repos/{owner}/{repo}/license` API returns the SPDX id and the raw text. Most permissive licenses (MIT, BSD, Apache-2.0) require the original copyright + permission notice be preserved in derivative distributions; some (Apache-2.0) also require a NOTICE file and changelog of modifications. Source-available licenses (BUSL, SSPL, tldraw SDK) restrict use entirely — flag those for the user before incorporating.
+- **Preserve the upstream notice in a discoverable place.** For one or two adapted files: a top-of-file comment with the license, copyright, and a one-line link is usually enough. For substantial pattern adoption across many files: create a `THIRD_PARTY_NOTICES.md` (or `NOTICE`) at the repo root with the full upstream license text plus a per-file map of what was adapted where, then have each derived file's header point at it.
+- **Distinguish "pattern adapted" from "code copied" in the comment.** Independent reimplementations modeled on an upstream design have a softer obligation than copy-pasted code, but both deserve attribution. Saying "patterned after X (MIT, © year holder); reimplemented from scratch" is honest and protects against future readers assuming a copy where there wasn't one.
+- **Do this even when both sides are MIT and copyright would technically permit silent reuse.** Attribution is also about traceability for future maintainers — a reader trying to understand why a streaming protocol looks the way it does benefits from knowing the lineage, regardless of legal mechanics.
+- **Treat the upstream link as live infrastructure for syncing forward.** This is the often-overlooked second reason attributions matter: the link is a permanent pointer back to a repository whose authors will keep evolving the design — fixing bugs, refactoring, adding modes, hardening edge cases. Months later, when a parser is misbehaving on an input we hadn't considered, the upstream may already have fixed it. When we want to add a feature, the upstream may already have explored the design and discarded the obvious-but-wrong approach. Without the link, every future change is unaided guesswork; with it, we can `git log -- the/upstream/file` against the original repo, read the relevant commits, and pick up the improvement (or learn from a deliberate non-improvement). Concretely, when adding the attribution comment: link to the **specific upstream file** (deep link, not just the repo root); when an upstream file gets renamed or restructured, update the link rather than letting it rot. The whole purpose of leaving these breadcrumbs evaporates if they don't point at anything reachable.
+- **Update the project's design doc, not just code comments, when the adoption is architectural.** A comment in one file flags one borrowing; a design-doc paragraph explains why the whole feature's shape mirrors an upstream's.
+- **Don't invent license text.** Read it from the upstream repo (the GitHub license API decodes the file from base64 in one call; don't transcribe). Quoting the wrong license in a NOTICE file is worse than quoting none.
+
+If unsure whether a borrowing rises to the level of needing attribution, ask the user — it's the kind of judgment call where their preference (and their tolerance for over- vs under-attribution) matters.
+
+### Attribution wording: credit, don't deflect
+
+How the attribution is phrased matters as much as whether it's there. The respectful framing leads with what the upstream gave you; the disrespectful framing leads with what you didn't take. Avoid disclaimers like "**not a copy**", "**reimplemented from scratch**", "**implementation here is independent**", "**re-implemented from scratch — not a copy — but**" as the headline of an attribution comment. They read as pre-emptive defenses against an imagined copyright accusation, and they undersell the upstream work — the design itself is usually what was borrowed, and the design is what matters.
+
+Frame attribution as credit. Some examples of the right register:
+
+- "Inspired by tldraw/agent-template — that project is where this design first came together."
+- "The streaming protocol comes from upstream; the implementation here mostly follows its shape."
+- "Largely a port of upstream's `closeAndParseJson` with style adjustments and one bug fix."
+- "The section structure (intro + rules with `###` sub-sections), the JSON-actions self-description, and the user-selection idiom are all from upstream."
+- "Adapted from upstream's AgentActionUtil; this version is a simpler reimplementation (interface vs class, no mode-specific overrides)."
+
+Calibrate the strength of the verb to the strength of the borrowing:
+
+- **Code copied or near-port** (same algorithm, same data structures, same naming, with cosmetic edits or one bugfix): use "**ported from**", "**closely follows**", "**largely a port of**", "**is a faithful re-rendering of**". Don't soften this with "inspired by" — that under-attributes.
+- **Pattern adapted** (same shape and intent, independently authored implementation): "**adapted from**", "**patterned after**", "**follows the design of**".
+- **Concept borrowed** (the idea or technique came from upstream, but the code doesn't resemble it): "**inspired by**", "**comes from**", "**informed by**".
+
+When you do need to clarify scope (e.g. "the schemas are mine but the schema-with-meta pattern is theirs"), do it as informative context for readers tracing concepts — not as a hedge to limit your obligation to credit. Phrase it positively: "the **upstream contribution** is the X; the Anipres-specific pieces (Y, Z) are added on top." Not: "X is taken from upstream **but** the Anipres pieces are original."
+
+The bar to check yourself: would the upstream author read this comment and feel credited, or would they feel like the comment is dancing around the borrowing? If the latter, rewrite.
 
 ## GitHub Actions
 
