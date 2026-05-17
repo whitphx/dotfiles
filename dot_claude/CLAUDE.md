@@ -42,6 +42,17 @@ When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibi
 - **Re-evaluate extractions after each round of edits.** A helper that pulled its weight when the call site was complex may stop pulling it after the call site simplifies. Inline it. The codebase's shape should track its current state, not its history.
 - **When you move / rename code, move its co-located test file too.** Tests live next to (and are named after) their subject, not their first home. After extracting `fetchMe` from `AuthContext.tsx` to `me-fetcher.ts`, `AuthContext.test.ts` should become `me-fetcher.test.ts`.
 
+## Backward compatibility
+
+Whether to preserve backward compatibility depends entirely on whether the "legacy" shape has actually shipped:
+
+- **Legacy code is already on `main` (or otherwise released — published package, deployed worker, persisted user data on disk/localStorage/DB that real users have).** Backward compatibility is *very* important. Migrations, fallbacks, dual-read code, and "drop the old key on next read" shims earn their keep here. Don't break a shape that real callers / real stored data depend on.
+- **Legacy code only exists earlier in the same unmerged feature branch.** There is no "legacy" — it's just an earlier draft of code I haven't reviewed yet. Migration shims, removal-after-read cleanups, and dual-shape readers are pure technical debt: they exist to honor a contract no one ever consumed. Default to deleting the old shape outright and writing the new code as if the old never existed.
+
+When you face this choice, **prompt me before silently picking the no-compat path.** Even when no-compat is clearly the simpler call, surfacing the decision lets me confirm the branch state matches your assumption (sometimes a "feature branch" change has actually been previewed by a teammate, or the localStorage key is shared with another in-flight branch). A one-line check ("This key only appears in this branch — drop the migration shim?") is cheap; silently shipping a shim I then have to ask you to remove is the failure mode to avoid.
+
+If you're not sure whether something has shipped, default to asking rather than assuming.
+
 ## Project scaffolding
 
 When initializing a new project, prefer the ecosystem's official scaffold command over hand-writing project metadata files. Examples:
@@ -66,6 +77,7 @@ Do not write comments that:
   - Path / endpoint enumerations that mirror routes, exports, or imports: "(`POST /foo`, `GET /bar`)" listing routes that live in another file, "(DocumentSyncRoom, fetch, scheduled)" listing a file's exports.
   - Identifier name lists that mirror a schema, picklist, or registry: "providers (github, google)", "the routes (me, logout, identities)".
   - Prose enumeration of branch conditions that mirror the `if` / `switch` / SQL `WHERE` clause right below: "Reject when soft-deleting or when workspace_id mismatches" sitting above `if (existing.deleting_at !== null || existing.workspace_id !== workspaceId)`. The branch already enumerates them; the prose just paraphrases the boolean expression. Keep only the *why* (why these conditions collapse to the same response code, why this asymmetry exists, etc.), not the enumeration.
+  - Return-case / precedence enumerations in a docstring that mirror the function's `if A: return X; if B: return Y; return None` ladder. "Precedence: 1. source if provided. 2. processor-wrapped input. 3. raw input. 4. None otherwise." sitting above exactly those four branches. The body *is* the precedence list. Keep the docstring at the concept-level ("decides which track leaves the worker") and attach any *why* — "an explicit source supersedes the peer track entirely" — as a one-line comment next to the branch that earned it, not as a 1-2-3-4 list pretending to be specification.
   Keep the *why* (sizing rationale, allowlist intent, design constraint), and let the reader read the value / count / list off the code.
 - **Justify a naming or extraction choice.** "Named because the call site reads better" / "Extracted because it's reused twice" — the name and the call sites are visible. If the *why* of the name encodes a real concept, the comment can capture that concept; otherwise drop it.
 - **Describe usage that grep can answer.** "Used in two sites below" / "Imported by routes/foo.ts" / "Used by routes/X (7 handlers)" — let the reader find usages with their tools.
@@ -80,6 +92,7 @@ Do not write comments that:
   - Block scope: "Update path.", "Insert path.", "Branch on existence with a SELECT first.", "Finalize the document: bump updated_at and clear initializing_at." used as English mini-headings inside a function. These are decorative section dividers in prose form — same problem as `// --- Update ---`, just without the dashes.
   Drop the preamble. Keep only the *why* (a non-obvious response-shape choice, a deliberate cross-handler asymmetry, a race-window the code below addresses, etc.).
 - **Quote specific facts you can't cite.** "The package emits printable-ASCII strings (typically <20 chars)" — where did the "<20 chars" come from? If you can't point at a doc / README / spec / measurement, drop the number; an unsupported specific looks authoritative and rots silently when the underlying behavior changes. When the fact *is* genuinely useful, leave a citation (link to the package README, a spec section, an issue) so a future reader can verify or update it.
+- **Reference code that no longer exists in the tree.** Phrases like "previously", "the old code", "used to return", "matching what X used to do", "this preserves the old behavior" anchor the comment to a diff the reader cannot see — to them, there is no "previous". They land mid-air. Describe what the code does now, or — if the rationale is non-obvious — the constraint that makes it do that. (Commit messages, PR descriptions, and changelog entries are the right home for "what changed"; comments are not.)
 
 Per-site WHY notes near a tricky branch, a non-obvious cast, a race-condition guard, or a deliberate asymmetry are valuable — keep those.
 
