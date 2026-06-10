@@ -134,6 +134,8 @@ The bar to check yourself: would the upstream author read this comment and feel 
 
 ## GitHub Actions
 
+Pin GitHub Actions action versions to immutable commit SHAs. Use `pinact` for this after adding or editing workflow or composite-action files that reference actions with `uses:`.
+
 After editing any GitHub Actions workflow or composite-action file (under `.github/workflows/` or `.github/actions/`), run `actionlint` on the changed files to catch syntax, expression, and shellcheck issues before committing. `actionlint` is installed locally via Homebrew.
 
 ## Command permissions
