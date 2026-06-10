@@ -132,12 +132,6 @@ When you do need to clarify scope (e.g. "the schemas are mine but the schema-wit
 
 The bar to check yourself: would the upstream author read this comment and feel credited, or would they feel like the comment is dancing around the borrowing? If the latter, rewrite.
 
-## GitHub Actions
-
-Pin GitHub Actions action versions to immutable commit SHAs. Use `pinact` for this after adding or editing workflow or composite-action files that reference actions with `uses:`.
-
-After editing any GitHub Actions workflow or composite-action file (under `.github/workflows/` or `.github/actions/`), run `actionlint` on the changed files to catch syntax, expression, and shellcheck issues before committing. `actionlint` is installed locally via Homebrew.
-
 ## Command permissions
 
 When asking the user for permission to run a non-trivial or complicated command, briefly explain in natural language what the command does and why it is being run, so the user can make an informed decision.
