@@ -1,7 +1,0 @@
-*~
-.DS_Store
-
-.envrc
-
-# https://code.claude.com/docs/en/settings#available-scopes
-.claude/*.local.*
