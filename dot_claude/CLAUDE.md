@@ -16,6 +16,22 @@ Note: Permission to amend or push applies only to the particular commit the user
 
 When the user has asked for changes to land in a PR — whether by creating one or pushing to a branch with one — CI is part of "done." Treat the work as incomplete until checks are green; this is an extension of the push instruction under "Git commit policy," not a separate authorization.
 
+### PR size
+
+Default to small, self-contained PRs — the smallest chunk that stands on its own and can be reviewed and merged without the others. Reviewer effort is the thing being optimized, and it grows faster than diff size.
+
+A large PR is fine when the changes are genuinely tangled: one purpose, and splitting them would leave a piece that doesn't build, doesn't pass tests, or can't be understood alone. Say that's the case when it is.
+
+When the work isn't tangled, split it — and split it before opening the PR, not after. Typical seams: a refactor or rename carried alongside a behavior change (mechanical part lands first), unrelated fixes batched because they were found together, new infrastructure plus its first consumer, formatting/lint/dependency churn mixed into substantive work. Don't split so far that the reviewer has to hold several PRs in their head at once, or that an intermediate PR is broken.
+
+If you're partway through a change and realize it has grown two purposes, tell me and propose the split rather than continuing to pile onto one branch.
+
+### Pre-flight review
+
+Before creating a PR, and before pushing an update to a branch that already has one, launch the `pr-reviewer` subagent and wait for its report. Pass it the base ref, the branch, the PR number if one exists, and the exact title and body about to be submitted. It reviews the diff and checks the description against the repo's PR template and contributing docs; it is read-only and reports back to you rather than posting anything.
+
+Act on its findings before submitting: fix the 76+ ones, and tell me about anything you decide not to fix and why. Don't skip the review because the change looks small — a one-line diff can still miss a required template section. Skip it only when I explicitly say to.
+
 - After a push to a PR branch, run `gh pr checks <number> --watch` and block on it in this turn. "I'll check later" / "you can verify with `gh ...`" is not acceptable — wait for the result before yielding.
 - On failure, read `gh run view <run-id> --log-failed` (not `--log` — the full log eats context for no gain). Read the actual error before reacting; do not pattern-match to a familiar-looking failure or guess from the job name.
 - Fix → push → re-watch. Loop until every check is `SUCCESS`. Local lint / typecheck / tests passing is not a substitute — CI runs jobs (matrix builds, integration suites, deploy previews) that can fail when local doesn't.
@@ -47,6 +63,7 @@ When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibi
   The bar for extraction: does the name encode a *concept* the reader couldn't read off the call site? `generateDocumentSlug()` passes (the call site's intent is "make a slug"; the name lets the implementation evolve independently). `registerCsrfGuard()` doesn't (the call site already says "register the csrf guard" by configuring the middleware).
 - **Re-evaluate extractions after each round of edits.** A helper that pulled its weight when the call site was complex may stop pulling it after the call site simplifies. Inline it. The codebase's shape should track its current state, not its history.
 - **Self-review meaningful code chunks before calling them done.** After finishing a coherent implementation chunk, re-read the changed code with a cleanup pass specifically for dead code: temporary debug-only APIs, unused helpers, obsolete branches, duplicated constants, logging added only to diagnose the task, and abstractions that no longer pull their weight. Remove those leftovers before finalizing, committing, or asking for review.
+  - Committing a working-but-messy state as a checkpoint is fine — reaching correctness through trials and errors is normal, and a commit that captures "this works" is worth having. But the checkpoint is not the end of the work: right after it, re-read the result critically as if someone else wrote it. Beyond dead code, look for the implementation you'd only write while still discovering the requirements — a hand-rolled version of something the stdlib/platform/a package already does, a manual loop with a built-in equivalent, defensiveness guarding a case the final types rule out, a parameter or flag that now has exactly one value, an abstraction shaped for a design that got abandoned. Working is not the same as finished.
 - **When you move / rename code, move its co-located test file too.** Tests live next to (and are named after) their subject, not their first home. After extracting `fetchMe` from `AuthContext.tsx` to `me-fetcher.ts`, `AuthContext.test.ts` should become `me-fetcher.test.ts`.
 
 ## Backward compatibility
