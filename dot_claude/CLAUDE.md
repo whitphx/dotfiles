@@ -22,6 +22,10 @@ When the user has asked for changes to land in a PR — whether by creating one 
 - If the same check fails three times across your fixes, stop and summarize what you tried. Three same-shape failures usually means the mental model is wrong, and continuing burns turns without converging.
 - If a failure is plausibly unrelated to the change (flaky test, infra outage, unrelated job timing out), say so explicitly and ask how to proceed — do not silently retry or rerun jobs to make red go away.
 
+### PR descriptions
+
+Keep PR descriptions short and plain: state the case the PR handles in 1-2 sentences and stop — the diff and tests carry the rest, and the reviewer reads the diff. Include a concrete input/output example only when it *shows* the bug (e.g. two Set-Cookie lines in, one out). Use a numbered list only when the PR genuinely has multiple distinct parts. Cut entirely: "Test Plan" sections, "verified locally" narratives, spec citations, production war stories/provenance, cross-repo references, "no new dependencies" notes, pre-commit/CI assurances — anything provable by the diff or CI is noise in prose. The same economy applies to issue drafts and commit bodies aimed at external maintainers, unless the extra context is load-bearing for a design discussion.
+
 ## Web frontend development
 
 When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibility (a11y):
