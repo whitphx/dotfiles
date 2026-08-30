@@ -125,6 +125,16 @@ If it's not obvious which scaffold flavor to pick (e.g., `--lib` vs `--package` 
 
 Don't hard-wrap prose in Markdown files for raw-file readability. Markdown is read rendered, not raw, so write one line per paragraph or list item and let the renderer wrap. Line breaks stay only where they are semantic: code blocks, tables, front matter, and intentional hard breaks.
 
+## Documentation policy
+
+Don't add prose to a README (or any other doc) that restates what the project's own metadata already declares. `peerDependencies` is the source of truth for which versions are supported, and a package manager reports an unmet peer at install time, so a paragraph repeating those ranges duplicates the manifest and goes stale the moment a range changes. The same applies to listing the flags a CLI's `--help` prints, restating a config schema in prose, enumerating a module's exports, and naming an option's default next to the code that sets it. This is the comment policy applied one level out: the bar is whether the text carries something the canonical source cannot.
+
+Documentation earns its place when it says what the metadata cannot. How to use the thing, why a default is what it is, the constraint behind a surprising requirement, the worked example that turns an API into a recipe.
+
+**Changelog entries are an exception, not a loophole.** A changelog addresses a different reader at a different moment: someone deciding whether to take a release, who has not installed it and so cannot read anything off the manifest. Stating new version ranges there, and answering the question the release actually raises for them, is substance rather than duplication.
+
+**When in doubt, leave the doc out and let the metadata speak.** A redundant paragraph is something I then have to ask you to remove, while a missing one costs a sentence to add later.
+
 ## Comment policy
 
 Comments should explain things that the code can't say on its own — non-obvious *why*, hidden constraints, design rationale, race conditions, references to external context (DB invariants, project-specific conventions, future-incompatibility notes that affect today's decisions). Default to writing none.
