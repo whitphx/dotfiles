@@ -1,6 +1,6 @@
 ---
 name: calendar-availability
-description: My calendar availability rules — use this whenever listing free dates or evenings, proposing meeting times, or deciding whether a calendar slot is realistically available. Inspect event titles and travel context, infer away periods from flights and travel markers, and never rely on Busy/Free alone.
+description: My calendar availability rules. Use this whenever listing free dates or evenings, proposing meeting times, or deciding whether a calendar slot is realistically available. Inspect event titles and travel context, infer away periods from flights and travel markers, and never rely on Busy/Free alone.
 ---
 
 # Calendar availability
