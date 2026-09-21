@@ -1,2 +1,9 @@
+{{/* Fail with the unlock command rather than bitwarden's bare "exit status 1". */}}
+{{- $bw := output "bw" "status" | fromJson -}}
+{{- if ne $bw.status "unlocked" -}}
+{{-   $verb := ternary "login" "unlock" (eq $bw.status "unauthenticated") -}}
+{{-   $hint := printf "Bitwarden is %s, so the index-url token cannot be read. Run `export BW_SESSION=$(bw %s --raw)`, then re-run chezmoi apply." $bw.status $verb -}}
+{{-   fail $hint -}}
+{{- end -}}
 [global]
 index-url = https://token:{{ (bitwarden "item" "6257d8c5-0bf7-4307-b903-b42201117169").notes }}@pypi.flatt.tech/simple/
