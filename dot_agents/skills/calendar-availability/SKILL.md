@@ -32,30 +32,41 @@ Examples include:
 
 For me, short entries such as `KR` are meaningful travel clues, especially when they are multi-day/all-day or occur near flight events. Do not discard them merely because the title is terse.
 
-### Likely flight events
+### Likely flight or intercity travel events
 
-Treat airport-route-shaped titles as likely flights. Common examples are:
+Do not require one exact title format. Interpret the event semantically and look for evidence that it represents movement between places.
+
+**Treat route-shaped IATA airport code pairs as a particularly strong positive signal.** I commonly write flight events this way, so strings such as these are useful search keys as well as strong evidence once found:
 
 - `HND-GMP`
 - `GMP-HND`
 - `NRT-ICN`
 - `TPE-HND`
 
-More generally, recognize patterns like two three-letter IATA airport codes separated by `-`, `/`, or an arrow.
+More generally, two three-letter airport codes separated by `-`, `/`, or an arrow should receive high weight as a likely flight route.
 
-HND and NRT are normally my Tokyo-side airports. A route from HND/NRT to another airport is therefore strong evidence of an outbound trip; a route ending at HND/NRT is strong evidence of a return. This is a clue rather than an absolute rule: use chronology and nearby events as well.
+Also recognize less structured travel notation. Examples include:
+
+- airport names such as `羽田`, `成田`, `金浦`, `仁川`, `松山`, `桃園`, or their English names
+- origin/destination expressions such as `羽田→金浦`, `羽田発`, `ソウル行き`, `台北から帰国`, or `Tokyo to Seoul`
+- airline names, flight numbers, terminal names, or other aviation terms when they appear with a plausible origin, destination, or travel time
+- natural-language titles whose wording and timing clearly imply departure, arrival, transit, or return even if no airport code appears
+
+Use event title, location, description, chronology, and nearby events together when the calendar tool exposes them. An airport name by itself is weaker evidence than an explicit route, but several consistent clues should be treated as travel.
+
+For me, HND/NRT and 羽田/成田 are normally Tokyo-side airports. A route or departure phrasing from one of them toward another city is therefore strong evidence of an outbound trip. A route or arrival phrasing toward one of them is strong evidence of a return. This is still a clue rather than an absolute rule, so use chronology and nearby events as well.
 
 ## Infer the away period
 
 Build a travel interval from the available evidence before producing free dates.
 
-- An outbound flight followed later by an inbound flight normally means I am away from the outbound departure through the inbound arrival.
+- An outbound trip followed later by a return normally means I am away from the outbound departure through the return arrival.
 - **Exclude every date inside that interval from normal local availability**, even if its calendar is otherwise empty.
 - Treat the outbound and return dates themselves as travel days and exclude them from ordinary "free evening" results unless I explicitly ask whether a narrow slot on a travel day is usable.
 - A multi-day travel event can establish or reinforce the same away interval.
-- Intermediate flights between non-Tokyo airports usually mean the trip is continuing, not that I have returned home.
-- If an outbound flight is visible but the return is not, do not start listing subsequent empty dates as confidently free. Search farther if practical; otherwise treat them as uncertain.
-- If a travel marker and flight pattern disagree, or the direction/extent of the trip cannot be determined confidently, **ask me a short clarification question before presenting the affected dates as available**.
+- Intermediate travel between non-Tokyo locations usually means the trip is continuing, not that I have returned home.
+- If outbound travel is visible but the return is not, do not start listing subsequent empty dates as confidently free. Search farther if practical; otherwise treat them as uncertain.
+- If a travel marker and route pattern disagree, or the direction/extent of the trip cannot be determined confidently, **ask me a short clarification question before presenting the affected dates as available**.
 
 Do not ask merely because travel exists. When the evidence clearly identifies the away interval, silently exclude it and, when useful, mention the excluded travel period.
 
