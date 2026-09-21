@@ -1,15 +1,15 @@
 ---
 name: calendar-availability
-description: My calendar availability rules. Use this whenever listing free dates or evenings, proposing meeting times, or deciding whether a calendar slot is realistically available. Inspect event titles and travel context, infer away periods from flights and travel markers, and never rely on Busy/Free alone.
+description: My calendar availability rules. Use this whenever listing free dates or times, proposing meeting slots, or deciding whether a calendar slot is realistically usable. Inspect event semantics, travel context, and practical buffers around nearby events rather than relying on Busy/Free alone.
 ---
 
 # Calendar availability
 
-When I ask which dates or times are free, answer the practical question "could I normally make a local appointment then?", not merely "does Google Calendar report this interval as free?"
+When I ask which dates or times are free, answer the practical question "could I reasonably schedule something then?", not merely "does Google Calendar report this interval as free?"
 
 ## Inspect calendar context before declaring availability
 
-- **Do not use Free/Busy as the only source.** Retrieve actual calendar events so you can inspect titles, dates, times, locations, and surrounding context. Free/Busy is useful for detecting ordinary conflicts, but it loses the semantic information needed to recognize travel.
+- **Do not use Free/Busy as the only source.** Retrieve actual calendar events so you can inspect titles, dates, times, locations, and surrounding context. Free/Busy is useful for detecting ordinary conflicts, but it loses the semantic information needed to recognize travel and judge how much transition time nearby events need.
 - **Inspect the full requested date range, plus nearby dates when possible.** Travel can start just before the requested range or end just after it. For availability searches spanning days or weeks, use a buffer of about a week on each side when the calendar tool permits it.
 - **Check the calendars that can affect my real availability**, including calendars where I keep travel or personal events. Do not assume the primary calendar is sufficient when other relevant calendars are accessible.
 - **For an evening-availability query, inspect the whole candidate day and nearby travel events**, not only events whose timestamps overlap the evening. A flight earlier that day or an all-day travel marker can make an otherwise empty evening unavailable.
@@ -70,15 +70,42 @@ Build a travel interval from the available evidence before producing free dates.
 
 Do not ask merely because travel exists. When the evidence clearly identifies the away interval, silently exclude it and, when useful, mention the excluded travel period.
 
-## Classify candidate dates conservatively
+## Respect practical margins around nearby events
 
-Before returning a date as available, put it mentally into one of these categories:
+Calendar non-overlap is not enough. A candidate slot can be technically free while still being impractical because it sits too close to the event before or after it.
 
-1. unavailable because an explicit event conflicts;
-2. unavailable because travel context says I am away or in transit;
-3. uncertain because travel is plausible but the interval cannot be resolved;
-4. available.
+Before proposing a slot, inspect the nearest event on both sides and infer a reasonable transition margin from the nature of those events. Treat the margin as part of the effective occupied interval for availability purposes.
 
-Return category 4 as free. Exclude categories 1 and 2. Resolve category 3 with me before calling it free.
+Use these as strong default anchors:
 
-**Prefer false negatives over false positives.** It is better to omit a possibly usable evening or flag it for confirmation than to tell me I am free while I am actually traveling.
+- **Flight or airport travel:** reserve about **3 hours before and after** the flight event. This covers airport access, check-in/security, baggage, delays, and recovery after arrival. If the surrounding travel context clearly needs more time, use more.
+- **Remote call or online meeting:** reserve about **30 to 60 minutes before and after**. Use the lower end for routine calls with little context switching and the higher end when preparation, decompression, or a harder context switch is plausible.
+
+For other event types, infer a reasonable margin from their semantics, location, and surrounding context. In-person appointments may need travel time. Events with unclear semantics should not automatically receive a zero-minute margin. If the amount of margin materially changes whether a slot is usable and cannot be inferred confidently, ask me.
+
+Apply the margin to **both sides** of the candidate:
+
+- If the candidate begins too soon after a previous event, that is a buffer conflict.
+- If the candidate ends too close to the next event, that is a buffer conflict.
+- If both sides are tight, treat the slot as especially undesirable.
+
+A buffer conflict is **not an absolute prohibition**. Sometimes I may choose to accept a tight turnaround when necessary. Therefore:
+
+- Do not present a buffer-conflicting slot as normally free.
+- You may omit it when there are cleaner alternatives.
+- If it is useful enough to propose, label the tight margin clearly and **ask me whether that tradeoff is acceptable before relying on the slot**.
+- Never silently convert "technically non-overlapping" into "available" when the inferred margin is violated.
+
+## Classify candidate slots conservatively
+
+Before returning a date or time as available, classify it as one of these:
+
+1. **hard conflict:** an explicit event overlaps the candidate;
+2. **travel conflict:** travel context says I am away or in transit;
+3. **buffer conflict:** the candidate does not overlap an event but violates a reasonable margin around a nearby event;
+4. **uncertain:** travel context or the required margin cannot be resolved confidently;
+5. **available:** none of the above applies.
+
+Return category 5 as normally free. Exclude categories 1 and 2. Treat category 3 as usable only with my confirmation. Resolve category 4 with me before calling it free.
+
+**Prefer false negatives over false positives.** It is better to omit a possibly usable slot or flag it for confirmation than to tell me I am free when the schedule would be unrealistically tight.
