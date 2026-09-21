@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Claude Code writes to ~/.claude/settings.json itself, and some of what it
+# writes belongs to this machine alone. The generated `autoMode` block, for one,
+# describes whatever repository a session happened to be working in.
+#
+# So rather than replacing the file, this script receives the machine's current
+# copy on stdin and overwrites only the keys frozen below. Every other key is
+# passed through untouched, which also means a key Claude Code invents later
+# stays machine-local until someone adds it here on purpose.
+#
+# A key earns its place here by being worth sharing between machines and safe to
+# publish, since this repository is public. Display preferences fail the second
+# test. Hooks fail both, because the tools that install them rewrite them, so
+# versioning those would fight their installers the way a plain managed copy of
+# this file fought Claude Code.
+#
+# `permissions.allow` is merged rather than replaced, so a rule that belongs to
+# one machine alone survives an apply.
+
+set -eu
+
+if ! command -v jq >/dev/null 2>&1; then
+	echo "modify_settings.json: jq is required" >&2
+	exit 1
+fi
+
+managed=$(cat <<'MANAGED_JSON'
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:malware-list.aikido.dev)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(jq:*)",
+      "Bash(git add:*)",
+      "Bash(git fetch *)",
+      "Bash(git log *)",
+      "Bash(git status)",
+      "Bash(gh *)",
+      "Bash(actionlint:*)",
+      "Bash(pnpm list *)",
+      "Bash(pnpm view *)",
+      "Bash(pnpm why *)",
+      "Bash(pnpm --version)"
+    ],
+    "defaultMode": "auto"
+  },
+  "model": "opus[1m]",
+  "skillOverrides": {
+    "cloudflare": "off",
+    "wrangler": "off",
+    "workers-best-practices": "off",
+    "agents-sdk": "off",
+    "durable-objects": "off",
+    "sandbox-sdk": "off",
+    "cloudflare-email-service": "off",
+    "cloudflare-one": "off",
+    "cloudflare-one-migrations": "off",
+    "turnstile-spin": "off",
+    "web-perf": "off",
+    "android-cli": "off"
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": true,
+    "code-review@claude-plugins-official": false,
+    "playwright@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": false,
+    "skill-creator@claude-plugins-official": true,
+    "codex@openai-codex": true,
+    "chrome-devtools-mcp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "voice": {
+    "enabled": false,
+    "mode": "hold"
+  },
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": false
+}
+MANAGED_JSON
+)
+
+jq -s --argjson managed "$managed" '
+	(.[0] // {}) as $local
+	| ($local.permissions // {}) as $localperms
+	| ($managed.permissions // {}) as $managedperms
+	| $local + $managed
+	| .permissions = ($localperms + $managedperms)
+	| .permissions.allow = ($localperms.allow // []) + (($managedperms.allow // []) - ($localperms.allow // []))
+'
