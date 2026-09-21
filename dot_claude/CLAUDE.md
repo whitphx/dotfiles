@@ -78,13 +78,7 @@ Two exceptions, both narrow. When the PR is already under active review, a note 
 
 ## Web frontend development
 
-When writing web frontend code (HTML, JSX, CSS, etc.), always consider accessibility (a11y):
-- Use semantic HTML elements (e.g., `<button>`, `<nav>`, `<main>`) over generic `<div>`/`<span>` where appropriate
-- Add `aria-label` to icon-only or visually ambiguous buttons/controls
-- Use `aria-pressed` for toggle buttons to expose state to assistive tech
-- Always set `type="button"` on `<button>` elements that are not form submit buttons
-- Don't rely on `:hover` alone for revealing interactive elements — ensure they are accessible via keyboard (`:focus-visible`, `:focus-within`) and visible on touch devices (`@media (hover: hover)`)
-- Ensure form inputs have associated labels
+Accessibility and other web frontend rules live in `~/.claude/rules/web-frontend.md`, which loads automatically when a matching file (HTML, JSX/TSX, Vue/Svelte/Astro, CSS) is in play. Read it when working on frontend code that doesn't match those globs.
 
 ## Coding style
 - **Default to libraries / built-ins for non-trivial logic.** "Non-trivial" means: anything beyond a few-line transformation, anything with edge cases that an upstream-tested implementation would already handle (CSRF Origin checks, retry pools, ID generation, URL parsing, OAuth flows, cookie attribute handling, etc.). Before writing a middleware / fetcher / parser / pool from scratch, look for an existing implementation — including framework built-ins (e.g. `hono/csrf`, `hono/cookie`), well-known npm packages (e.g. `nanoid`, `p-limit`, `valibot`), and platform APIs (`URL`, `crypto.subtle`, `AbortSignal.timeout`). Self-implementation is a valid choice but **needs justification**: e.g. the dep is heavy relative to the work, the upstream behavior doesn't fit our exact need, real bundle/perf concerns, etc. State the reasoning if picking self-implementation.
