@@ -4,25 +4,27 @@ Distinguish observations and questions from directives. If I describe a problem,
 
 ## Git commit policy
 
-When I make code changes that form a coherent, meaningful batch ready for version control, I may ask the user if they want to commit these changes to Git. If the user agrees, I will create a commit with a descriptive message summarizing the changes made.
+When you make code changes that form a coherent, meaningful batch ready for version control, you may ask me whether to commit them. If I agree, create the commit with a descriptive message summarizing the changes.
 
 **Restrictions:**
-- Never amend commits unless explicitly instructed by the user for that specific commit
-- Never push commits unless explicitly instructed by the user for that specific commit
+- Never amend commits unless I explicitly instruct you to for that specific commit
+- Never push commits unless I explicitly instruct you to for that specific commit
 
-Note: Permission to amend or push applies only to the particular commit the user mentions in their instruction. This permission does not carry over to subsequent commits—each commit requires its own explicit instruction.
+Note: Permission to amend or push applies only to the particular commit I named in that instruction. It does not carry over to subsequent commits — each commit needs its own explicit instruction.
 
 ## Pull request workflow
 
-PR workflow rules (PR sizing and splitting, the mandatory `pr-reviewer` pre-flight review, watching CI after a push, PR description and title conventions, and how to dispose of AI review-bot findings) live in the `pull-requests` skill. Load it before creating a PR, before pushing to a branch that already has one, and when replying to review comments. The one rule below stays here because it must apply whether or not that skill is loaded.
+PR workflow rules (PR sizing and splitting, the mandatory `pr-reviewer` pre-flight review, watching CI after a push, PR description and title conventions, and how to dispose of AI review-bot findings) live in the `pull-requests` skill. Load it before creating a PR, before pushing to a branch that already has one, and when replying to review comments. One rule that comes up constantly in PR threads is broader than this workflow and has its own section below.
 
-### Never speak to other people on my behalf
+## Never speak to other people on my behalf
 
-Anything posted to a GitHub thread under my account is me talking, and I do my own talking. Never post a comment, review reply, or issue message that carries my voice toward another person. That specifically rules out evaluating or praising their work ("good catch", "nice suggestion", "you're right"), thanking or apologizing, agreeing or disagreeing with a proposal, accepting or pushing back on review feedback, and committing me to future work ("I'll do X next", "will follow up"). These are mine to say, and a machine saying them in my name misrepresents me to a person I have a real relationship with.
+Anything sent under my name or from my account is me talking, and I do my own talking. This holds on every platform, not only the one where it comes up most often. A GitHub issue, pull request, or review thread is the typical case, and the same rule governs email, Slack and Discord messages, comments on Linear / Jira / Asana / Notion, and anything else a connector, CLI, or API token can post as me. Never send a message, comment, or reply that carries my voice toward another person. That specifically rules out evaluating or praising their work ("good catch", "nice suggestion", "you're right"), thanking or apologizing, agreeing or disagreeing with a proposal, accepting or pushing back on review feedback, and committing me to future work ("I'll do X next", "will follow up"). These are mine to say, and a machine saying them in my name misrepresents me to a person I have a real relationship with.
 
-Objective, checkable statements of fact are fine to post: what an experiment measured, what a benchmark produced, what a test does now, what a commit changed. State them plainly, with no evaluation of the other person attached and no promises appended. "The suite passes with this change, and the test still fails without it" is fine; the same sentence prefixed with "Good call" is not.
+Objective, checkable statements of fact are fine to send: what an experiment measured, what a benchmark produced, what a test does now, what a commit changed. State them plainly, with no evaluation of the other person attached and no promises appended. "The suite passes with this change, and the test still fails without it" is fine; the same sentence prefixed with "Good call" is not.
 
-When a thread needs a reply that is not pure fact, do not improvise one. Tell me what needs answering, draft the text if that helps, and let me post it. Asking is always the cheap, correct move here, and this holds even when I have told you to proceed autonomously: autonomy covers the work, never my voice. If I have already asked you to post something specific, post that, not an embellished version of it.
+When a thread needs a reply that is not pure fact, do not improvise one. Tell me what needs answering, draft the text if that helps, and let me either send it myself or approve it for you to send. Asking is always the cheap, correct move here, and this holds even when I have told you to proceed autonomously: autonomy covers the work, never my voice.
+
+**The exception: when I say so for that message.** Send something in my voice in two cases: I tell you to send a specific message, or I approve a draft to go out in my name. The test is whether I spoke about that particular message, so a standing autonomy grant or a general "go ahead and handle the PR" leaves this rule fully in force, and every further message needs its own approval. Send exactly what I asked for. When I gave you the substance and left the wording to you, show me the text first; send straight away only when I have already told you to.
 
 ## Web frontend development
 
@@ -108,7 +110,7 @@ Do not write comments that:
 
 Per-site WHY notes near a tricky branch, a non-obvious cast, a race-condition guard, or a deliberate asymmetry are valuable — keep those.
 
-**Cite the document the code is following.** When code implements a shape that an external document specifies (a vendor's docs page, an upstream README's recommended example, an RFC, a spec section, a linked issue), put that link in a comment next to the code that follows it. The point is proof-reading: a reviewer can check the code against its source instead of taking my word for how the upstream behaves, and a future maintainer can see whether the upstream has since changed. Link the exact section anchor rather than the document's front page, and pin the link to the version the code actually depends on: for an action pinned to a commit SHA, link that SHA's README section, not the branch tip that will drift away from it. Verify the link resolves before committing it, and when it can't be fetched from the current environment, say so and cite the primary source that was read instead of pasting a URL from memory. This is separate from the attribution rules below, which govern borrowed code and licensing; a file can need both.
+**Cite the document the code is following.** When code implements a shape that an external document specifies (a vendor's docs page, an upstream README's recommended example, an RFC, a spec section, a linked issue), put that link in a comment next to the code that follows it. The point is proof-reading: a reviewer can check the code against its source instead of taking the author's word for how the upstream behaves, and a future maintainer can see whether the upstream has since changed. Link the exact section anchor rather than the document's front page, and pin the link to the version the code actually depends on: for an action pinned to a commit SHA, link that SHA's README section, not the branch tip that will drift away from it. Verify the link resolves before committing it, and when it can't be fetched from the current environment, say so and cite the primary source that was read instead of pasting a URL from memory. This is separate from the attribution rules below, which govern borrowed code and licensing; a file can need both.
 
 **Anchor comments to the narrowest thing they explain.** Place a comment immediately before the specific line, argument, or branch it justifies — not at the head of the enclosing call, block, or function. A note explaining a `--color never` flag belongs directly above the `"--color", "never"` items inside the argument list, not above the `run_command(` call; a note about one condition of a compound `if` belongs on that condition's line if the syntax allows. The reader should never have to scan downward to find which part of the code a comment is talking about, and when the anchor line moves in a refactor, the comment must move with it.
 

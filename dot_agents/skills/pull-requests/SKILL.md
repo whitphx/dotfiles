@@ -38,7 +38,7 @@ When a finding is valid and still applies, fix it as part of the work, with the 
 
 When a finding is wrong, or describes something already fixed, post a reply saying why and resolve the conversation. Don't leave threads open for me to work through, and don't resolve one silently. Reply with `gh api repos/<owner>/<repo>/pulls/<number>/comments/<comment-id>/replies -f body=...`, then resolve through the GraphQL `resolveReviewThread` mutation, whose thread ID comes from the PR's `reviewThreads`.
 
-Keep those replies to checkable fact: what the current code does, which commit changed it, why the described path cannot happen. The rule above about not speaking in my voice still governs the wording even though the reader is a machine, because the thread sits under my account and people read it afterwards. Once a human joins the thread it stops being a bot thread, and that rule governs it entirely.
+Keep those replies to checkable fact: what the current code does, which commit changed it, why the described path cannot happen. The rule in `CLAUDE.md` about not speaking in my voice still governs the wording even though the reader is a machine, because the thread sits under my account and people read it afterwards. Once a human joins the thread it stops being a bot thread, and that rule governs it entirely.
 
 ## PR descriptions
 
