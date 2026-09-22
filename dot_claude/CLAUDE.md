@@ -93,29 +93,20 @@ Two failure modes put a comment on the list below. **Redundancy**: the code righ
 
 ### Comments to avoid
 
-- **Restatement of what the code already says.** "Title: at least one non-whitespace character, bounded length, no null bytes" sitting above a schema that pipes `minLength`, `regex`, `maxLength`, `regex` is duplication. The schema is the description. Same for "Combined param schema for `GET /foo/:a/:b` — validates both segments at once" sitting above a `v.object({a, b})`: the schema body says it.
-- **A claim about code that the code itself is the source of truth for.** This is the broader form of "don't quote literal values." It covers:
-  - Literal values mirroring a constant: "5 MB headroom" above `5 * 1024 * 1024`, ":8787" mirroring a port literal, "`(\"github\" | \"google\")` picklist" mirroring a `v.picklist([...])`, "the typed contract is 200|401" mirroring `if (res.status === ...)` checks.
-  - Count / cardinality claims: "the only helper shared", "used in two sites below", "all three providers", "the four fields above". The number drifts the moment a fifth one is added.
-  - Path / endpoint enumerations that mirror routes, exports, or imports: "(`POST /foo`, `GET /bar`)" listing routes that live in another file, "(DocumentSyncRoom, fetch, scheduled)" listing a file's exports.
-  - Identifier name lists that mirror a schema, picklist, or registry: "providers (github, google)", "the routes (me, logout, identities)".
-  - Prose enumeration of branch conditions that mirror the `if` / `switch` / SQL `WHERE` clause right below: "Reject when soft-deleting or when workspace_id mismatches" sitting above `if (existing.deleting_at !== null || existing.workspace_id !== workspaceId)`. The branch already enumerates them; the prose just paraphrases the boolean expression. Keep only the *why* (why these conditions collapse to the same response code, why this asymmetry exists, etc.), not the enumeration.
-  - Return-case / precedence enumerations in a docstring that mirror the function's `if A: return X; if B: return Y; return None` ladder. "Precedence: 1. source if provided. 2. processor-wrapped input. 3. raw input. 4. None otherwise." sitting above exactly those four branches. The body *is* the precedence list. Keep the docstring at the concept-level ("decides which track leaves the worker") and attach any *why* — "an explicit source supersedes the peer track entirely" — as a one-line comment next to the branch that earned it, not as a 1-2-3-4 list pretending to be specification.
-  Keep the *why* (sizing rationale, allowlist intent, design constraint), and let the reader read the value / count / list off the code.
-- **Justification of a naming or extraction choice.** "Named because the call site reads better" / "Extracted because it's reused twice" — the name and the call sites are visible. If the *why* of the name encodes a real concept, the comment can capture that concept; otherwise drop it.
-- **A description of usage that grep can answer.** "Used in two sites below" / "Imported by routes/foo.ts" / "Used by routes/X (7 handlers)" — let the reader find usages with their tools.
-- **Speculation about unimplemented future work** unless that speculation constrains today's code. "Phase 1 has 1:1 X:Y; Extension A will expand …" is fine if it explains why an interface shape today is more general than it needs to be; it's noise if it's just describing what isn't built yet.
-- **Project-internal jargon (Phase 1 / Extension A / nicknamed milestones) without an anchor.** A first-time reader of the file shouldn't need to know what "Phase 1" means. If the term is load-bearing, expand the concept inline; if not, replace with concrete language ("currently") or drop.
-- **Cross-file context repeated from the one canonical site that already holds it.** State the explanation in one place (typically next to the definition / decision) and let other sites point at it briefly.
-- **A convention dressed up as a systematic feature.** "To add an endpoint: add the handler to `routes/<url>.ts`, then chain `.route("/", ...)` below" reads like a step-by-step the codebase enforces, when it's just a layout convention nothing actually checks. State the convention if it needs stating; skip the prescriptive instructions the code can't make true.
-- **Decorative section dividers.** `// --- Schemas ---`, `// --- Routes ---` between groups of declarations add no information; the declarations themselves are already visible. If a file is long enough that a reader can't navigate it, that's a signal to split the file, not to add headings.
-- **A descriptive what-is preamble.** A paraphrase of whatever the reader is about to see — file, function, route handler, or block — adds nothing. The pattern shows up at every scope:
-  - File scope: "Type-only export surface for the app's `hc<AppType>()` client" sitting above `export type { AppType } from "./worker"` paraphrases the file name plus the one line below.
-  - Route handler scope: "Soft-delete a document." / "Push a snapshot into the Durable Object room." / "List active documents in a workspace, in sort order." sitting above `.delete("/api/documents/:id", ...)` / `.put("/api/documents/:id/snapshot", ...)` / `.get("/api/documents", ...)` with `ORDER BY sort_order`. The HTTP verb plus the route URL plus the response shape already says it.
-  - Block scope: "Update path.", "Insert path.", "Branch on existence with a SELECT first.", "Finalize the document: bump updated_at and clear initializing_at." used as English mini-headings inside a function. These are decorative section dividers in prose form — same problem as `// --- Update ---`, just without the dashes.
-  Drop the preamble. Keep only the *why* (a non-obvious response-shape choice, a deliberate cross-handler asymmetry, a race-window the code below addresses, etc.).
-- **A specific fact you can't cite.** "The package emits printable-ASCII strings (typically <20 chars)" — where did the "<20 chars" come from? If you can't point at a doc / README / spec / measurement, drop the number; an unsupported specific looks authoritative and rots silently when the underlying behavior changes. When the fact *is* genuinely useful, leave a citation (link to the package README, a spec section, an issue) so a future reader can verify or update it.
-- **A reference to code that no longer exists in the tree.** Phrases like "previously", "the old code", "used to return", "matching what X used to do", "this preserves the old behavior" anchor the comment to a diff the reader cannot see — to them, there is no "previous". They land mid-air. Describe what the code does now, or — if the rationale is non-obvious — the constraint that makes it do that. (Commit messages, PR descriptions, and changelog entries are the right home for "what changed"; comments are not.)
+Worked examples for every entry below live in `~/.claude/rules/comments.md`, which loads automatically when a source file is in play. Read it when the name alone doesn't settle the call.
+
+- **Restatement of what the code already says.**
+- **A claim about code that the code itself is the source of truth for.** The drift list above names the usual forms. Keep the *why* behind a value, and let the reader read the value, count, or list off the code.
+- **Justification of a naming or extraction choice.** The name and its call sites are already visible. If the *why* of the name encodes a real concept, keep the concept and drop the justification.
+- **A description of usage that grep can answer.**
+- **Speculation about unimplemented future work** unless that speculation constrains today's code — explaining why an interface is more general today than it needs to be is worth keeping.
+- **Project-internal jargon (Phase 1 / Extension A / nicknamed milestones) without an anchor.** Expand the concept inline when it's load-bearing, otherwise use concrete language ("currently") or drop it.
+- **Cross-file context repeated from the one canonical site that already holds it.** State it once, next to the definition or decision, and let other sites point at it briefly.
+- **A convention dressed up as a systematic feature.** State the convention if it needs stating, and skip prescriptive steps the code can't actually enforce.
+- **Decorative section dividers.** If a file is long enough that a reader can't navigate it, split the file rather than adding headings.
+- **A descriptive what-is preamble.** It shows up at file, function, route handler, and block scope alike. Drop it and keep only the *why*.
+- **A specific fact you can't cite.** Without a doc, spec, or measurement to point at, drop the number; an unsupported specific looks authoritative and rots silently. When the fact is genuinely useful, leave the citation with it.
+- **A reference to code that no longer exists in the tree.** The reader never saw the previous version, so "previously" / "used to return" / "this preserves the old behavior" land mid-air. Describe what the code does now, or the constraint that makes it do that. Commit messages, PR descriptions, and changelogs are the home for what changed.
 
 ### Comments that earn their place
 
@@ -137,4 +128,4 @@ Rules for crediting external projects (when adapted code or a borrowed design ne
 
 ## Command permissions
 
-When asking the user for permission to run a non-trivial or complicated command, briefly explain in natural language what the command does and why it is being run, so the user can make an informed decision.
+When asking me for permission to run a non-trivial or complicated command, briefly explain in natural language what the command does and why it is being run, so I can make an informed decision.
