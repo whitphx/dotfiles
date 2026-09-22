@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Codex writes its own configuration and runtime state into this file: enabled
+# plugins, marketplaces, MCP servers, per-project trust levels and hook approval
+# hashes. Replacing it with a managed copy destroys all of that, so this script
+# receives the machine's current copy on stdin and overwrites only the keys
+# frozen below, passing every other line through untouched.
+#
+# `notify` is left alone whenever it already references the notification script.
+# Codex's computer-use plugin rewrites the value to wrap the previous command,
+# and forcing the plain form back would uninstall that wrapper on every apply.
+
+set -eu
+
+notify='notify = ["'"$HOME"'/.local/bin/ai-cli-notification.sh", "--tool=codex"]'
+
+awk -v want="$notify" '
+	BEGIN { preamble = 1; kept = 0; n = 0 }
+	/^\[/ { preamble = 0 }
+	preamble && /^notify[ \t]*=/ {
+		if (index($0, "ai-cli-notification.sh")) { lines[n++] = $0; kept = 1 }
+		next
+	}
+	{ lines[n++] = $0 }
+	END {
+		if (!kept) printf "%s\n", want
+		for (i = 0; i < n; i++) printf "%s\n", lines[i]
+	}
+'
