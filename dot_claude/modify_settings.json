@@ -59,7 +59,10 @@ managed=$(cat <<'MANAGED_JSON'
     "cloudflare-one-migrations": "off",
     "turnstile-spin": "off",
     "web-perf": "off",
-    "android-cli": "off"
+    "android-cli": "off",
+    "built-in-browser": "off",
+    "computer-use": "off",
+    "import-memory": "off"
   },
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": false,
@@ -67,7 +70,7 @@ managed=$(cat <<'MANAGED_JSON'
     "code-review@claude-plugins-official": false,
     "playwright@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": false,
-    "skill-creator@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": false,
     "codex@openai-codex": true,
     "chrome-devtools-mcp@claude-plugins-official": true
   },
