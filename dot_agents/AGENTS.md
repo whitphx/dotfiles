@@ -38,6 +38,7 @@ Accessibility and other web frontend rules live in `~/.claude/rules/web-frontend
   - Community adoption: treat adoption as a meta-signal of quality — how close the library is to a de facto standard, how much of the surrounding ecosystem assumes it, how easy it is to find an answer when it misbehaves.
   - Whatever else the specific choice turns on: license, bundled types, runtime and platform support, transitive dependency count, and how hard it would be to migrate away later.
   Tell me what you compared and why the winner won, not just the winner. A short paragraph is enough; the point is that I can see alternatives were weighed rather than the first hit taken.
+  Once a candidate and version are picked, and before adding or updating any third-party dependency, run the `scan-dependencies` skill on it. Don't proceed on `BLOCK`; bring `CAUTION` and unknown-risk results to me first.
 - **Prefer direct library APIs and local explicit code over thin abstraction layers.** Introduce helper utilities only when they encode real policy or repeated complexity. Concrete anti-patterns:
   - One-line wrappers around a library call: `function registerCsrfGuard(app) { app.use("*", csrf({...})) }` adds no signal beyond `app.use("*", csrf({...}))` at the call site.
   - Single-call-site "helpers" that just rename the operation.
