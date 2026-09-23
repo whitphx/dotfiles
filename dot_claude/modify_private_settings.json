@@ -72,13 +72,20 @@ managed=$(cat <<'MANAGED_JSON'
     "code-simplifier@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": false,
     "codex@openai-codex": true,
-    "chrome-devtools-mcp@claude-plugins-official": true
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "ponytail@ponytail": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
       "source": {
         "source": "github",
         "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
       }
     }
   },
