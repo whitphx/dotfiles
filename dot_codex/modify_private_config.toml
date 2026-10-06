@@ -6,6 +6,10 @@
 # receives the machine's current copy on stdin and overwrites only the keys
 # frozen below, passing every other line through untouched.
 #
+# The shared plugins and their marketplaces are appended only when their table
+# is missing. Codex adds its own keys to those tables (e.g. `last_updated`),
+# so an existing table is passed through as-is.
+#
 # `notify` is left alone whenever it already references the notification script.
 # Codex's computer-use plugin rewrites the value to wrap the previous command,
 # and forcing the plain form back would uninstall that wrapper on every apply.
@@ -14,9 +18,26 @@ set -eu
 
 notify='notify = ["'"$HOME"'/.local/bin/ai-cli-notification.sh", "--tool=codex"]'
 
-awk -v want="$notify" '
+tables='
+[marketplaces.ponytail]
+source_type = "git"
+source = "https://github.com/DietrichGebert/ponytail.git"
+
+[marketplaces.i-have-adhd]
+source_type = "git"
+source = "https://github.com/ayghri/i-have-adhd.git"
+ref = "main"
+
+[plugins."ponytail@ponytail"]
+enabled = true
+
+[plugins."i-have-adhd@i-have-adhd"]
+enabled = true
+'
+
+tables="$tables" awk -v want="$notify" '
 	BEGIN { preamble = 1; kept = 0; n = 0 }
-	/^\[/ { preamble = 0 }
+	/^\[/ { preamble = 0; seen[$0] = 1 }
 	preamble && /^notify[ \t]*=/ {
 		if (index($0, "ai-cli-notification.sh")) { lines[n++] = $0; kept = 1 }
 		next
@@ -25,5 +46,11 @@ awk -v want="$notify" '
 	END {
 		if (!kept) printf "%s\n", want
 		for (i = 0; i < n; i++) printf "%s\n", lines[i]
+		nb = split(ENVIRON["tables"], blocks, "\n\n")
+		for (b = 1; b <= nb; b++) {
+			sub(/^\n+/, "", blocks[b]); sub(/\n+$/, "", blocks[b])
+			split(blocks[b], first, "\n")
+			if (!(first[1] in seen)) printf "\n%s\n", blocks[b]
+		}
 	}
 '
