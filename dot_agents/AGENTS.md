@@ -4,7 +4,7 @@ Distinguish observations and questions from directives. If I describe a problem,
 
 ## Git commit policy
 
-When you make code changes that form a coherent, meaningful batch ready for version control, you may ask me whether to commit them. If I agree, create the commit with a descriptive message summarizing the changes.
+When you make code changes that form a coherent, meaningful batch ready for version control, you may ask me whether to commit them. If I agree, create the commit with a descriptive message. The message is where the *why* of the change lives: the motivation, the problem it solves, the context that prompted it. The diff already shows what changed, so don't spend the message restating it (see "Where each explanation lives" under the comment policy).
 
 **Restrictions:**
 - Never amend commits unless I explicitly instruct you to for that specific commit
@@ -88,9 +88,20 @@ Documentation earns its place when it says what the metadata cannot. How to use 
 
 ## Comment policy
 
-Comments should explain things that the code can't say on its own — non-obvious *why*, hidden constraints, design rationale, race conditions, references to external context (DB invariants, project-specific conventions, future-incompatibility notes that affect today's decisions). Default to writing none.
+### Where each explanation lives
 
-Two failure modes put a comment on the list below. **Redundancy**: the code right next to it already says the same thing, so the comment costs the reader attention and returns nothing. **Drift**: the comment copies a fact that the code is the real source of truth for — a literal value, a count, a path, an identifier list, a branch condition, a line that has since been deleted — and nothing updates the copy when the original changes. Drift is the worse of the two. A stale comment does not go quiet; it keeps asserting something that has become false, and a reader who trusts it ends up further off than one who had no comment at all. This is also why the *why* earns its place where the *what* does not: the code cannot restate a rationale, and it cannot silently invalidate one either.
+> Code tells how, tests tell what, commit logs tell why, and code comments tell why not.
+
+- **Code says how.** The implementation is the how, so a comment that narrates it is redundant.
+- **Tests say what.** The expected behavior belongs in test names and assertions, where it is checked, not in prose that nothing checks.
+- **The commit log says why.** The motivation for a change, the problem it fixed, and the history behind it go in the commit message, which stays attached to the exact diff it explains.
+- **Comments say why not.** A comment explains why the code is not the obvious alternative: why the simpler call doesn't work here, why the "redundant" guard must stay, which constraint rules out the cleaner version. It is the note that stops the next reader from "fixing" the code into a bug.
+
+Nothing else goes in a code comment. A comment that holds a how, a what, or a change's history belongs in one of the other three places, or nowhere.
+
+Every *why* this policy tells a comment to keep is the why-not kind: the hidden constraint, design rationale, race condition, or external fact (a DB invariant, a project convention, an upstream behavior) that makes the obvious alternative wrong. Default to writing none.
+
+Two failure modes put a comment on the list below. **Redundancy**: the code right next to it already says the same thing, so the comment costs the reader attention and returns nothing. **Drift**: the comment copies a fact that the code is the real source of truth for — a literal value, a count, a path, an identifier list, a branch condition, a line that has since been deleted — and nothing updates the copy when the original changes. Drift is the worse of the two. A stale comment does not go quiet; it keeps asserting something that has become false, and a reader who trusts it ends up further off than one who had no comment at all. This is also why the *why not* earns its place where the *what* does not: the code cannot restate a rationale, and it cannot silently invalidate one either.
 
 ### Comments to avoid
 
