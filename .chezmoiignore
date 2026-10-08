@@ -1,3 +1,6 @@
 {{- if ne .chezmoi.os "darwin" }}
 ~/Library/Preferences/pnpm/rc
 {{- end }}
+
+# Rules for one machine only. A glob, so that their names never reach this public repo either.
+.claude/rules/*.local.md
