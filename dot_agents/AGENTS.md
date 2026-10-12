@@ -147,6 +147,10 @@ Per-site WHY notes near a tricky branch, a non-obvious cast, a race-condition gu
 
 Rules for crediting external projects (when adapted code or a borrowed design needs attribution, how to check the upstream license, where the notice goes, and how to word it as credit rather than a disclaimer) live in the `attribution` skill. Load it when writing code that is structurally derived from an external project, whether I named the source or it surfaced during research.
 
+## Working around problems in other projects
+
+When a task works around a problem in someone else's project (an override or version pin, a skipped install script, a wrapper, a patch, a disabled check, a retry), the fix may belong upstream. The rules for confirming that, marking the workaround, offering the upstream contribution, and removing the workaround later live in the `upstream-fixes` skill. Load it when you add such a workaround. The short version: mark it in a comment, ask me at the end of the task whether to contribute the fix, and touch nothing outside the repository until I approve.
+
 ## Command permissions
 
 When asking me for permission to run a non-trivial or complicated command, briefly explain in natural language what the command does and why it is being run, so I can make an informed decision.
