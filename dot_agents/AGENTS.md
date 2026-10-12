@@ -149,7 +149,7 @@ Rules for crediting external projects (when adapted code or a borrowed design ne
 
 ## Working around problems in other projects
 
-When a task works around a problem in someone else's project (an override or version pin, a skipped install script, a wrapper, a patch, a disabled check, a retry), the fix may belong upstream. The rules for confirming that, marking the workaround, offering the upstream contribution, and removing the workaround later live in the `upstream-fixes` skill. Load it when you add such a workaround. The short version: mark it in a comment, ask me at the end of the task whether to contribute the fix, and touch nothing outside the repository until I approve.
+When a task works around a problem in someone else's project (an override or version pin, a skipped install script, a wrapper, a patch, a disabled check, a retry), the fix may belong upstream. The rules for confirming that, marking the workaround, offering the upstream contribution, and removing the workaround later live in the `upstream-fixes` skill. Load it when you add such a workaround. The short version: mark it in a comment, ask me at the end of the task whether to contribute the fix, and post or fork nothing upstream until I approve.
 
 ## Command permissions
 
