@@ -8,9 +8,16 @@ When you make code changes that form a coherent, meaningful batch ready for vers
 
 **Restrictions:**
 - Never amend commits unless I explicitly instruct you to for that specific commit
-- Never push commits unless I explicitly instruct you to for that specific commit
+- Never push commits unless I explicitly instruct you to for that specific commit, except in the agent-only case below
 
-Note: Permission to amend or push applies only to the particular commit I named in that instruction. It does not carry over to subsequent commits — each commit needs its own explicit instruction.
+Note: Outside the agent-only exception below, permission to amend or push applies only to the particular commit I named in that instruction. It does not carry over to subsequent commits — each commit needs its own explicit instruction.
+
+**Agent-only branches in my own repos: push without asking.** Asking before every push slows down work nobody else is watching, so push freely when all of these hold:
+- The actual push destination is a repository owned by my personal GitHub account `whitphx`. `gh repo view` checks the repo `gh` resolves, which can differ from where Git pushes, so resolve the destination first with `git remote get-url --push --all <remote>` and check that exact repo with `gh repo view OWNER/REPO --json owner`. More than one push URL, or any URL not owned by `whitphx`, means ask.
+- The push updates exactly one branch under `refs/heads/`, and it is not that repository's default branch. Tags, `--all`, `--mirror`, `--tags`, branch deletion, and every force mechanism (`--force`, `--force-with-lease`, `+refspec`) still need my explicit instruction.
+- The branch is worked only by me and the coding agent: every commit since it diverged from its base is mine or the agent's, and on every PR that uses it as the head branch, including PRs in an upstream repo when this is a fork, I'm the author and no other human has committed, reviewed, or commented. Bot comments (CI, AI review bots) don't count as collaboration.
+
+When any condition fails or you can't verify it, ask as before. The pre-push steps in the `pull-requests` skill still apply.
 
 ## Pull request workflow
 
