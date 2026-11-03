@@ -4,13 +4,19 @@ Distinguish observations and questions from directives. If I describe a problem,
 
 ## Git commit policy
 
-When you make code changes that form a coherent, meaningful batch ready for version control, you may ask me whether to commit them. If I agree, create the commit with a descriptive message. The message is where the *why* of the change lives: the motivation, the problem it solves, the context that prompted it. The diff already shows what changed, so don't spend the message restating it (see "Where each explanation lives" under the comment policy).
+**Commit on your own judgment.** When your changes form a coherent, meaningful batch, commit them without asking. Local commits are cheap to reshape before they leave the machine, and the push gate below is where I review them, so asking per commit only slows the work down. Stage only the changes you made: uncommitted work of mine that was already in the tree stays out of your commits unless I say otherwise. If my uncommitted edits share a file with yours and you can't separate them, ask before committing. The message is where the *why* of the change lives: the motivation, the problem it solves, the context that prompted it. The diff already shows what changed, so don't spend the message restating it (see "Where each explanation lives" under the comment policy).
 
 **Restrictions:**
-- Never amend commits unless I explicitly instruct you to for that specific commit
-- Never push commits unless I explicitly instruct you to for that specific commit, except in the agent-only case below
+- Never amend commits unless I explicitly instruct you to for that specific commit, except your own unpushed commits. You may amend, fixup, squash, or reword commits you created in this session, as long as no remote ref contains them yet (after `git fetch`, `git branch -r --contains <sha>` prints nothing) and every commit the rewrite touches is yours. An author field can't tell your commits from mine, which is why only this session's commits count. If either condition is unclear, ask. Folding a fix into the commit it belongs to keeps the history readable when I review it at the push gate. A rewrite that would touch my commits or anything already pushed still needs my instruction.
+- Never push commits unless I explicitly instruct you to for that specific push, except in the agent-only case below
 
-Note: Outside the agent-only exception below, permission to amend or push applies only to the particular commit I named in that instruction. It does not carry over to subsequent commits — each commit needs its own explicit instruction.
+Note: Outside the exceptions above and below, permission to amend or push applies only to the particular commit or push I named in that instruction. It does not carry over to later ones; each needs its own explicit instruction.
+
+**Before every push, review and report.** Because commits don't pass by me one at a time, the push is my only checkpoint, so prepare it:
+1. Review the commits about to be pushed with a fresh context: hand the commit range to a subagent that has not seen this conversation, so it judges the diff and messages on their own rather than through your intent. Address each finding before going further: fix it, or note why it doesn't apply. Re-review if the fixes are substantive. On a branch with a PR, the `pr-reviewer` run that the `pull-requests` skill requires is this review; don't run a second one.
+2. Show me the push destination (remote and branch), the commits to be pushed (`git log --oneline <upstream>..HEAD` or the equivalent range), and what the review found and how each finding was handled.
+
+When asking for push permission, this report is the request. Under the agent-only exception, still run the review, and give me the report right after the push.
 
 **Agent-only branches in my own repos: push without asking.** Asking before every push slows down work nobody else is watching, so push freely when all of these hold:
 - The actual push destination is a repository owned by my personal GitHub account `whitphx`. `gh repo view` checks the repo `gh` resolves, which can differ from where Git pushes, so resolve the destination first with `git remote get-url --push --all <remote>` and check that exact repo with `gh repo view OWNER/REPO --json owner`. More than one push URL, or any URL not owned by `whitphx`, means ask.
