@@ -1,6 +1,6 @@
 ---
 name: agent-dispatch
-description: "Hand a bounded task to another coding agent — code review, a second opinion, an adversarial discussion, analysis, or a scoped implementation — and run it in its own visible pane when the session is inside Herdr or Orca. Use when the user names another agent (\"ask Codex to…\", \"have Claude review…\"), asks for a second opinion, a comparison, parallel work, or a discussion between agents, or asks to watch an agent work in a pane. Also use before spawning a coding CLI by hand."
+description: "Hand a bounded task to another coding agent — code review, a second opinion, an adversarial discussion, analysis, or a scoped implementation — run it in its own visible pane when the session is inside Herdr or Orca, and act on the review findings you judge sound without asking first. Use when the user names another agent (\"ask Codex to…\", \"have Claude review…\"), asks for a second opinion, a comparison, parallel work, or a discussion between agents, or asks to watch an agent work in a pane. Also use before spawning a coding CLI by hand, and when a dispatched review comes back with findings."
 ---
 
 # Agent Dispatch
@@ -96,6 +96,20 @@ For a discussion or a second opinion, say what position you already hold and ask
 Treat the worker's self-report as a claim, not a result. Inspect `git diff` yourself if it edited anything, run the verification locally, and give the user the synthesized answer rather than the raw transcript — they can already see the pane.
 
 When two workers disagree, say so and give your own call. Do not average them.
+
+## Act on review feedback you agree with
+
+When you dispatched a review of your own work and it comes back with things to fix, judge each finding on its merits, then start fixing the ones you agree with in the same turn. Don't stop to ask whether to apply them. This holds whether the user asked for the review or you started it. A review exists so the work gets better, and a finding you have already judged sound and worth its cost is routine follow-through, not a new decision.
+
+Verify a finding against the code before you act on it. A reviewer that never saw this conversation can misread intent or flag something the code already handles, so confirm the defect is real rather than taking the report's word for it.
+
+Some findings are reported to the user rather than fixed:
+
+- Ones that change scope, the design, or a decision the user already made. Those are the user's to reopen.
+- Ones you disagree with or judge not worth the cost. Name them and say why in one line each, so the user can overrule you.
+- Ones whose fix would need an action under "Never delegate" below. Removing code inside the change you are reviewing is ordinary editing, not a delete in that sense. Doing such an action yourself still needs the user's explicit intent.
+
+After fixing, re-run the verification, and dispatch the review again if the fixes were substantive. Then report what you fixed, what you skipped and why, and what is waiting on the user.
 
 ## Never delegate
 
