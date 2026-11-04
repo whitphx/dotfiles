@@ -13,7 +13,9 @@
 # publish, since this repository is public. Display preferences fail the second
 # test. Hooks fail both, because the tools that install them rewrite them, so
 # versioning those would fight their installers the way a plain managed copy of
-# this file fought Claude Code.
+# this file fought Claude Code. The one exception is the chezmoi reminder hook,
+# which no installer owns. It is appended only when no entry already runs it, so
+# the installers' entries pass through as they are.
 #
 # `permissions.allow` is merged rather than replaced, so a rule that belongs to
 # one machine alone survives an apply.
@@ -109,11 +111,16 @@ managed=$(cat <<'MANAGED_JSON'
 MANAGED_JSON
 )
 
-jq -s --argjson managed "$managed" '
+hook=$(jq -n --arg cmd "$HOME/.agents/hooks/chezmoi-reminder.py" \
+	'{matcher: "Edit|Write|MultiEdit|NotebookEdit", hooks: [{type: "command", command: $cmd}]}')
+
+jq -s --argjson managed "$managed" --argjson hook "$hook" '
 	(.[0] // {}) as $local
 	| ($local.permissions // {}) as $localperms
 	| ($managed.permissions // {}) as $managedperms
 	| $local + $managed
 	| .permissions = ($localperms + $managedperms)
 	| .permissions.allow = ($localperms.allow // []) + (($managedperms.allow // []) - ($localperms.allow // []))
+	| .hooks.PostToolUse = ((.hooks.PostToolUse // []) as $post
+		| if any($post[].hooks[]?; .command == $hook.hooks[0].command) then $post else $post + [$hook] end)
 '

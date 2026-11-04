@@ -13,10 +13,22 @@
 # `notify` is left alone whenever it already references the notification script.
 # Codex's computer-use plugin rewrites the value to wrap the previous command,
 # and forcing the plain form back would uninstall that wrapper on every apply.
+#
+# The chezmoi reminder hook goes here rather than in hooks.json, which Orca
+# rewrites. It is detected by its script name, not by its table header, because
+# `[[hooks.PostToolUse]]` is an array that other tools may also append to.
+# Codex runs it only after it is trusted once with `/hooks`.
 
 set -eu
 
 notify='notify = ["'"$HOME"'/.local/bin/ai-cli-notification.sh", "--tool=codex"]'
+
+hook='[[hooks.PostToolUse]]
+matcher = "apply_patch"
+
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = "'"$HOME"'/.agents/hooks/chezmoi-reminder.py"'
 
 tables='
 [marketplaces.ponytail]
@@ -35,8 +47,9 @@ enabled = true
 enabled = true
 '
 
-tables="$tables" awk -v want="$notify" '
-	BEGIN { preamble = 1; kept = 0; n = 0 }
+tables="$tables" hook="$hook" awk -v want="$notify" '
+	BEGIN { preamble = 1; kept = 0; hooked = 0; n = 0 }
+	index($0, "chezmoi-reminder.py") { hooked = 1 }
 	/^\[/ { preamble = 0; seen[$0] = 1 }
 	preamble && /^notify[ \t]*=/ {
 		if (index($0, "ai-cli-notification.sh")) { lines[n++] = $0; kept = 1 }
@@ -52,5 +65,6 @@ tables="$tables" awk -v want="$notify" '
 			split(blocks[b], first, "\n")
 			if (!(first[1] in seen)) printf "\n%s\n", blocks[b]
 		}
+		if (!hooked) printf "\n%s\n", ENVIRON["hook"]
 	}
 '

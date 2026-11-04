@@ -39,6 +39,10 @@ When a thread needs a reply that is not pure fact, do not improvise one. Tell me
 
 **The exception: when I say so for that message.** Send something in my voice in two cases: I tell you to send a specific message, or I approve a draft to go out in my name. The test is whether I spoke about that particular message, so a standing autonomy grant or a general "go ahead and handle the PR" leaves this rule fully in force, and every further message needs its own approval. Send exactly what I asked for. When I gave you the substance and left the wording to you, show me the text first; send straight away only when I have already told you to.
 
+## Dotfiles under `~` are chezmoi-managed
+
+When you edit a file under `~` that is outside the current working tree, check `chezmoi source-path <file>` first. A managed file is versioned in the chezmoi source repo, not in any repo around it. Plain sources take `chezmoi add <file>` after the edit. Templates and `modify_` scripts must be edited at the source and then applied, because `chezmoi add` would overwrite them with rendered output. Either way, the change is not done until it is committed in the source repo, under the commit policy above.
+
 ## Web frontend development
 
 Accessibility and other web frontend rules live in `~/.claude/rules/web-frontend.md`, which loads automatically when a matching file (HTML, JSX/TSX, Vue/Svelte/Astro, CSS) is in play. Read it when working on frontend code that doesn't match those globs.
