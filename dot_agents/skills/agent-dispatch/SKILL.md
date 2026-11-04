@@ -62,14 +62,14 @@ orca skills get orca-cli        # worktrees, terminals, full ownership handoffs
 
 Pick `orchestration` when you stay responsible for the outcome and want to supervise, and `orca-cli` when the user is handing the work over entirely.
 
-`orca` exits **0 even when a command fails** and reports the failure as `"ok": false` in its JSON. Branch on `.ok`, never on the exit status. `.ok` only says the call itself went through, though. A `worker-start` whose agent never got the task still returns `"ok": true`, with the outcome in `.result.state` (`failed`, plus `failedStage` and `lastError`). Check both. Keep the whole JSON of a failed call, too: filtering it with `grep` can hide the very error you need, and a failed start leaves resources that only its `residualResources` and `recovery` fields name.
+`orca` exits **0 even when a command fails** and reports the failure as `"ok": false` in its JSON. Branch on `.ok`, never on the exit status. For `worker-start`, `.ok` only says the call went through. A start whose agent never got the task still returns `"ok": true`, with the outcome in `.result.state` (`failed`, plus `failedStage` and `lastError`). Keep the whole JSON of a failed call, too: filtering it with `grep` can hide the very error you need, and a failed start leaves resources that only its `residualResources` and `recovery` fields name.
 
-A `worker-start` that fails at `agent_readiness` with `timeout` does not mean the agent failed to start. Read the pane it created, the `terminal` entry under `residualResources`, before you retry:
+A `worker-start` that fails at `agent_readiness` with `timeout` does not mean the agent failed to start. Read the pane it created before you retry. Its handle is the `terminal` entry under `residualResources`.
 
-- A first-run dialog, such as Codex's hooks trust prompt, is the user's to answer.
-- An agent idle at its own input prompt means Orca's readiness check did not recognise it. Another `worker-start` times out the same way, and a longer `--timeout-ms` does not help; this was seen with Codex 0.163 under Orca 1.4.206. Give that pane the task with `orca terminal send --terminal <handle> --text <prompt> --enter` instead. Don't release the failed attempt first, because releasing closes the pane.
+- A first-run dialog, such as Codex's hooks trust prompt, is the user's to answer. Once they answer it, treat the pane like the case below.
+- An agent idle at its own input prompt means Orca's readiness check did not recognize it. Another `worker-start` times out the same way, and a longer `--timeout-ms` does not help. Seen with Codex 0.163 under Orca 1.4.206. Give that pane the task with `orca terminal send --terminal <handle> --text <prompt> --enter` instead. Don't release the failed attempt first, because releasing closes the pane. Release it once the report file below exists.
 
-Work sent that way is unsupervised, so Orca never reports when it finishes. Write the spec to a file and send a one-line prompt that points at it. Grant the worker one write, a report file you name, and wait for that file rather than polling the pane.
+Work sent that way is unsupervised, so Orca never reports when it finishes. Write the spec to a file and send a one-line prompt that points at it. Grant the worker one write, a report file you name, and say so in the prompt, since it is an exception to a read-only scope. Then wait for that file rather than polling the pane.
 
 ## Neither harness
 
