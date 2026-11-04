@@ -4,3 +4,10 @@ Library
 
 # Rules for one machine only. A glob, so that their names never reach this public repo either.
 .claude/rules/*.local.md
+
+{{/* apply still renders these, so a locked vault makes it fail instead of silently skipping them. */}}
+{{- if and (has "diff" .chezmoi.args) (ne (output "bw" "status" | fromJson).status "unlocked") }}
+.npmrc
+.config/pip/pip.conf
+.config/uv/uv.toml
+{{- end }}
